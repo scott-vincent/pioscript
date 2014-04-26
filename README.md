@@ -24,5 +24,8 @@ Other Advantages
 
 Let's Go
 --------
-The only file you need to download to get up and running is the pioscript.tar file.
-See the pioscript_README.txt file for install instructions, full documentation and command reference.
+The only file you need to download to get up and running is the pioscript.tar file. To download this file just click on it and then press the RAW button to start the download. If you are having trouble downloading the tar file you may also download it from here:
+
+  https://drive.google.com/file/d/0B7jKC5k3oKbWV29xc3JYM3NYTXM/edit?usp=sharing
+
+See the pioscript_README file for install instructions, full documentation and command reference.
