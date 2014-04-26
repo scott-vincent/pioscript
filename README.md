@@ -14,7 +14,7 @@ Advantages over ScratchGPIO
 
 Advantages over Python
 ----------------------
-- Built-In Initialisation - All of the built-in resources such as GPIO, Audio (via SSL-Mixer) and PWM (via ServoBlaster) are initialised automatically and ready for use with a single line of script.
+- Built-In Initialisation - All of the built-in resources such as GPIO, Audio (via SDL_Mixer) and PWM (via ServoBlaster) are initialised automatically and ready for use without a single line of script.
 - Hidden Complexity - There are simple one line commands to perform complex operations such as fading out a sound, varying PWM output linearly or sinusoidally and reading an analog input such a photoresistor (see the scripts directory for examples of all of these).
 
 Other Advantages
