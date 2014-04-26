@@ -24,8 +24,10 @@ Other Advantages
 
 Let's Go
 --------
-The only file you need to download to get up and running is the pioscript.tar file. To download this file just click on it and then press the RAW button to start the download. If you are having trouble downloading the tar file you may also download it from here:
+The only file you need to download to get up and running is the pioscript.tar file. You can download this file directly on your Pi using the following command:
 
-  https://drive.google.com/file/d/0B7jKC5k3oKbWckdNOXM1cml1OU0/edit?usp=sharing
+   wget https://raw.github.com/scott-vincent/pioscript/master/pioscript.tar
+
+Alternatively, to download this file in your browser just click on it and then press the RAW button to start the download.
 
 See the pioscript_README file for install instructions, full documentation and command reference.
