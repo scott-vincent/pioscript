@@ -9,6 +9,7 @@ or are retrieved via apt-get:
    tar xvf pioscript.tar
    cd pioscript
    ./install.sh
+   more README
 
 Usage
 =====
