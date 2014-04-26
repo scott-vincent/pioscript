@@ -8,7 +8,7 @@ install all the pre-requisites which are either included in the package
 or are retrieved via apt-get:
    tar xvf pioscript.tar
    cd pioscript
-   ./install.sh
+   sudo install.sh
    more README
 
 Usage
