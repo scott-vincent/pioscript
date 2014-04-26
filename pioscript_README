@@ -31,6 +31,7 @@ and then try again.
 The following scripts are also included but view the script before
 you run it to see what GPIO connections are required:
    pioscript scripts/sample
+   pioscript scripts/longpress
    pioscript scripts/servo
    pioscript scripts/photosensor
 
@@ -38,6 +39,7 @@ The Pibrella add-on board is fully supported. Try the following
 example scripts:
    pioscript scripts/pibrella_example1
    pioscript scripts/pibrella_example2
+   pioscript scripts/pibrella_longpress
    pioscript scripts/pibrella_simon
    pioscript scripts/pibrella_photosensor
    pioscript scripts/pibrella_star_wars
@@ -236,7 +238,7 @@ OPERATORS
                          Any of the logical operators =, <, >, !=, <=, >=, and,
                          or, not may be used in an expression.
   set a = ($b = true)    A logical expression evaluates to 1 (true) or 0
-                         false). You may also use the constants true or false.
+                         false). You may also use the constants true and false.
   set a = 3 + ($b >= $c) An expression can contain any mix of mathematical and
                          logical operators.
 
@@ -257,12 +259,22 @@ FUNCTIONS
 
 CONDITIONALS
 ---------
-  if $winner
-  end_if
-  while $a != 1
-  end_while
+  if $winner             Only executes the commands between if and else/end_if
+                         when the expression evaluates to true.
+  else                   Only executes the commands between else and end_if when                         the expression evaluates to false. The else command is
+                         optional within an if block.
+  end_if                 Marks the end of an if block.
+  while $a != 1          Continuously executes the commands between while and
+                         end_while until the expression evaluates to false.
+  end_while              Marks the end of a while block.
   for $a=0 ($a < 10) $a=$a+1
-  end_for
+                         The for command expects exactly 3 parameters. If a
+                         parameter includes spaces you must enclose it in
+                         brackets. Param 1 is a set command to execute on intial
+                         entry to the for block. Param 2 is an expression to
+                         evaluate at the start of each iteration and param 3 is
+                         a set command to execute at the end of each iteration.
+  end_for                Marks the end of a for block.
 ========================================
 
 Note: Any command that takes an output pin as its first parameter will also

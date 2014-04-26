@@ -15,19 +15,19 @@ start Monitor Switch
 :Monitor Switch
 wait_press 2
 start_sync 
-while not released(2)
+while not released(2) and (sync() < 1)
 	wait .1
 end_while
-if sync() > 1
+if sync() >= 1
 	exit
 end_if
-if ledNum = 0
+if $ledNum = 0
 	turn_off *
 	turn_on 0
-	ledNum = 1
+	set ledNum = 1
 else
 	turn_off *
 	turn_on 1
-	ledNum = 0
+	set ledNum = 0
 end_if
 repeat
