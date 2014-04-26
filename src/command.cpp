@@ -1805,7 +1805,7 @@ void Command::report()
 	printf("---------\n");
 	printf("  if $winner             Only executes the commands between if and else/end_if\n");
 	printf("                         when the expression evaluates to true.\n");
-	printf("  else                   Only executes the commands between else and end_if when");
+	printf("  else                   Only executes the commands between else and end_if when\n");
 	printf("                         the expression evaluates to false. The else command is\n");
 	printf("                         optional within an if block.\n");
 	printf("  end_if                 Marks the end of an if block.\n");

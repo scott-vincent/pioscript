@@ -261,7 +261,8 @@ CONDITIONALS
 ---------
   if $winner             Only executes the commands between if and else/end_if
                          when the expression evaluates to true.
-  else                   Only executes the commands between else and end_if when                         the expression evaluates to false. The else command is
+  else                   Only executes the commands between else and end_if when
+                         the expression evaluates to false. The else command is
                          optional within an if block.
   end_if                 Marks the end of an if block.
   while $a != 1          Continuously executes the commands between while and
