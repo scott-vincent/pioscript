@@ -22,4 +22,7 @@ Other Advantages
 - Pibrella Support - There is full built-in support for the Pibrella add-on board which makes it very easy for primary school children to get up and running quickly. They can use easy to remember names for the GPIO inputs/outputs instead of trying to understand pin numbers.
 - Play Songs - The play_song command can be used to play a complete song by specifying a sequence of musical note names with optional octave number and duration. If a Pibrella is being used the song will play on its built-in buzzer meaning that speakers do not have to be attached to the Pi.
 
-See the README file for full documentation and command reference.
+Let's Go
+--------
+The only file you need to download to get up and running is the pioscript.tar file.
+See the pioscript_README.txt file for install instructions, usage documentation and command reference.
