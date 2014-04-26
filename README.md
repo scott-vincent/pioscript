@@ -29,7 +29,7 @@ The only file you need to download to get up and running is the pioscript.tar fi
     wget https://raw.github.com/scott-vincent/pioscript/master/pioscript.tar
     tar xvf pioscript.tar
     cd pioscript
-    ./install.sh
+    sudo install.sh
     more README
     
 See the pioscript_README file for install instructions, full documentation and command reference.
