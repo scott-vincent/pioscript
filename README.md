@@ -28,6 +28,4 @@ The only file you need to download to get up and running is the pioscript.tar fi
 
    wget https://raw.github.com/scott-vincent/pioscript/master/pioscript.tar
 
-Alternatively, to download this file in your browser just click on it and then press the RAW button to start the download.
-
 See the pioscript_README file for install instructions, full documentation and command reference.
