@@ -20,3 +20,5 @@ Advantages over Python
 Other Advantages
 ----------------
 There is built-in support for the Pibrella add-on board which makes it very easy for primary school children to get up and running quickly. They can use easy to remember names for the GPIO inputs/outputs instead of trying to understand pin numbers.
+
+See the README file for full documentation and command reference.
