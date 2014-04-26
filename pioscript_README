@@ -1,0 +1,212 @@
+
+Pioscript v2.0    Scott Vincent    April 2014    email: scottvincent@yahoo.com
+
+Installation
+============
+Untar the package and run the install script. The install script will
+install all the pre-requisites which are either included in the package
+or are retrieved via apt-get:
+   tar xvf pioscript.tar
+   cd pioscript
+   ./install.sh
+
+Usage
+=====
+To run a script:
+   pioscript <script_file>
+
+To get help including the list of valid script commands:
+   pioscript --help
+
+A test script is included that doesn't require any GPIO pins
+to be connected:
+   pioscript scripts/sound
+
+If you don't hear any sound try running:
+   ./resetAudio.sh hdmi
+or
+   ./resetAudio.sh analog
+and then try again.
+
+The following scripts are also included but view the script before
+you run it to see what GPIO connections are required:
+   pioscript scripts/sample
+   pioscript scripts/servo
+   pioscript scripts/photosensor
+
+The Pibrella add-on board is fully supported. Try the following
+example scripts:
+   pioscript scripts/pibrella_example1
+   pioscript scripts/pibrella_example2
+   pioscript scripts/pibrella_simon
+   pioscript scripts/pibrella_photosensor
+   pioscript scripts/pibrella_star_wars
+
+Script Instructions
+===================
+
+GPIO input and output pins should be specified using wiringPi numbering,
+i.e. pin 0 is physical pin 11 on the Raspberry Pi connector.
+
+PWM output uses ServoBlaster and only pins 0 to 16 may be used. Again,
+wiringPi numbering should be used.
+
+Mapping for WiringPi Pin to Physical Pin on Main Connector
+  0->11, 1->12, 2->13, 3->15, 4->16, 5->18, 6->22, 7->7, 8->3, 9->5, 10->24,
+  11->26, 12->19, 13->21, 14->23, 15->8, 16->10
+
+Mapping for WiringPi Pin to Physical Pin on Auxilliary Connector (Rev. 2 boards
+only)
+  17->3, 18->4, 19->5, 20->6
+
+For Reference (and special thanks):
+  Name: WiringPi
+  Author: Gordon Henderson
+  http://wiringpi.com
+
+  Name: ServoBlaster
+  Author: Richard Hirst
+  https://github.com/richardghirst/PiBits/tree/master/ServoBlaster
+
+When using PWM to drive LEDs a value of 0 sets the LED fully off (0%) and a
+value of 100 sets it fully on (100%).
+
+When using PWM to drive servos you should first use the output_pwm command to
+determine the minimum and maximum rotation values for your servo. You should
+then use the rangemap_pwm command to set the discovered range and then revert
+to using values between 0 and 100 for all PWM commands to this servo where a
+value of 0 will set the servo to its minimum rotation and a value of 100 will
+set the servo to its maximum rotation. Cycle time is 10ms so a good starting
+point is to set the minimum to 5 (=0.5ms) and maximum to 23 (=2.3ms).
+
+Important Note: There is no idle_timeout set on ServoBlaster so if you use
+the output_pwm command on a servo and leave it in the same position for long
+periods of time the servo may get warm. To protect your servo you should also
+use the stop_pwm command after a short delay.
+
+Important Note 2: If you are using the Pibrella add-on and use either the
+sound_buzzer, play_note or play_song commands you will no longer hear any sound
+samples play until you reboot your Pi. This is because the internal buzzer
+uses hardware PWM which interferes with the Pi's audio output.
+
+Command List
+============
+
+General
+-------
+  # Comment              This is a comment.
+  :main                  Define main activity. This activity is started when
+                         the script first runs.
+  :myjob                 Define a sub-activity.
+  start myjob            Start a sub-activity.
+  start_wait myjob       Start a sub-activity and wait for it to complete.
+  stop myjob             Interrupt and stop a sub-activity.
+  wait 1.5               Pause this activity for the specified number of
+                         seconds.
+  repeat                 Repeat this activity.
+  print mytext           Print some text. Useful for debugging scripts.
+  start_sync             Start or reset the global timer. This is useful for
+                         synchronising commands across concurrent activities.
+  set_sync 12.5          Set the global timer to the specified number of
+                         seconds. This is useful when testing a new script.
+  wait_sync 3.5          Wait for the global timer to reach the specified
+                         number of seconds. If the time has already passed the
+                         next command will be executed immediately.
+  exit                   Stop all activities and quit.
+  use_addon pibrella     Use the Pibrella add-on board. Instead of pin numbers
+                         you can use the following names: Button, Red, Amber,
+                         Green, InputA, InputB, InputC, InputD, OutputE,
+                         OutputF, OutputG, OutputH.
+
+Audio
+-----
+  play_sound mywavfile   Play a sound. Only 48 KHz 16-bit stereo WAV files are
+                         supported.
+  play_loop mywavfile    Play in a continuous loop.
+  play_wait mywavfile    Play a sound and wait for it to complete.
+  play_from 4.5 mywavfile
+                         Play a sound from the specified number of seconds
+                         after the start.
+  pause mywavfile        Pause a sound.
+  pause *                Pause all currently playing sounds.
+  resume mywavfile       Resume playing a sound.
+  resume *               Resume all currently paused sounds.
+  stop_sound mywavfile   Stop playing a sound.
+  stop_sound *           Stop all sounds.
+  volume 7.5 mywavfile   Set the volume of a sound in the range 0 to 10.
+  volume 10 *            Set the volume of all sounds.
+  fadeout 2.5 mywavfile  Fade a sound out over the specified number of seconds.
+  fadeout 5 *            Fade out all currently playing sounds over the
+                         specified number of seconds.
+  sound_buzzer 2         Pibrella only. Sound the buzzer for the specified
+                         number of seconds.
+  play_note 60 .5        Pibrella only. Play the specified MIDI note for the
+                         specified number of seconds. Note 60 is middle C. The
+                         buzzer is limited to 3 octaves so note must be between
+                         48 and 84.
+  play_note A#2 .5       You can use note names instead of MIDI note numbers.
+                         Specify A to G or - for a rest optionally followed by
+                         # (sharp) or b (flat) optionally followed by an octave
+                         number 0, 1, 2 or 3.
+  play_song 1 A#2,.5 C,.25 G -,2 Db0,4 etc.
+                         Plays the [note,length] sequence at speed 1. Use speed
+                         1 for normal length notes, 2 for double speed etc.
+
+GPIO
+----
+  wait_press 1           Wait for switch 1 to be pressed.
+                         Note: Internal pull-up resistor will be enabled or
+                         internal pull-down resistor if you are using a
+                         Pibrella add-on board.
+  wait_release 1         Wait for switch 1 to be released.
+  wait_high 1            Wait for input 1 to go high.
+  wait_low 1             Wait for input 1 to go low.
+  output_high 1          Set output 1 high.
+  output_low 1           Set output 1 low.
+  output_pwm 1 50        Set output 1 to a PWM value in the range 0 to 100.
+  turn_on 1              Same as output_high 1. Use this for LEDs.
+  flash 1 1.5            Flash the LED every 1.5 seconds until it is turned off.
+  turn_off 1             Same as output_low 1.
+  set_power 1 50         Same as output_pwm 1 50. Use this for motors.
+  set_brightness 1 50    Same as output_pwm 1 50. Use this for LEDs.
+  set_position 1 50      Same as output_pwm 1 50. Use this for servos.
+  rangemap_pwm 1 2.5 12.5
+                         Setting output 1 to PWM value 0 will now equate to a
+                         real PWM value of 2.5 and setting it to PWM value 100
+                         wil now equate to a real PWM value of 12.5.
+  random_pwm 1 15 100 0.05 7.5
+                         Set output 1 to a random PWM value between 15 and 100
+                         every 50ms for a total duration of 7.5 seconds.
+  random_pwm_loop 1 15 100 0.05
+                         Set output 1 to a random PWM value between 15 and 100
+                         every 50ms continuously.
+  linear_pwm 1 5 95 7.5  Vary PWM linearly from 5 to 95 for a total duration
+                         of 7.5 seconds.
+  linear_pwm_wait 1 5 95 7.5
+                         Same as random_pwm but wait for the cycle to complete
+                         before executing the next command.
+  linear_pwm_loop 1 5 95 7.5
+                         Vary PWM linearly from 5 to 95 continuously with each
+                         cycle taking 7.5 seconds.
+  sine_pwm 1 15 85 0 360 7.5
+                         Vary PWM between 15 (at -90 degrees) and 85 (at 90
+                         degrees) using a sine wave that varies from 0 to 360
+                         degrees for a total duration of 7.5 seconds.
+  sine_pwm_wait 1 15 85 0 360 7.5
+                         Same as sine_pwm but wait for the cycle to complete
+                         before executing the next command.
+  sine_pwm_loop 1 15 85 0 360 7.5
+                         Vary PWM between 15 (at -90 degrees) and 85 (at 90
+                         degrees) using a sine wave that varies from 0 to 360
+                         degrees continuously with each cycle taking 7.5
+                         seconds.
+  stop_pwm 1             Stop PWM on output 1.
+========================================
+
+Note: Any command that takes an output pin as its first parameter will also
+accept a range of pins or * for all pins, e.g.
+
+  linear_pwm 3-11 5 95 7.5
+                         Performs linear PWM output on all pins from 3 to 11.
+  output_high *          Sets all defined outputs high.
+
