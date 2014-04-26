@@ -14,7 +14,7 @@ Advantages over ScratchGPIO
 
 Advantages over Python
 ----------------------
-- Built-In Initialisation - All of the built-in resources such as GPIO, Audio (via SSL-Mixer) and PWM (via ServoBlaster) are initialised automatically and ready for use with a single line of script.
+- Built-In Initialisation - All of the built-in resources such as GPIO, Audio (via SDL_Mixer) and PWM (via ServoBlaster) are initialised automatically and ready for use without a single line of script.
 - Hidden Complexity - There are simple one line commands to perform complex operations such as fading out a sound, varying PWM output linearly or sinusoidally and reading an analog input such a photoresistor (see the scripts directory for examples of all of these).
 
 Other Advantages
@@ -24,8 +24,8 @@ Other Advantages
 
 Let's Go
 --------
-The only file you need to download to get up and running is the pioscript.tar file. To download this file just click on it and then press the RAW button to start the download. If you are having trouble downloading the tar file you may also download it from here:
+The only file you need to download to get up and running is the pioscript.tar file. You can download this file directly on your Pi using the following command:
 
-  https://drive.google.com/file/d/0B7jKC5k3oKbWV29xc3JYM3NYTXM/edit?usp=sharing
+   wget https://raw.github.com/scott-vincent/pioscript/master/pioscript.tar
 
 See the pioscript_README file for install instructions, full documentation and command reference.
