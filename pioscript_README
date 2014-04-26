@@ -104,9 +104,13 @@ General
   wait 1.5               Pause this activity for the specified number of
                          seconds.
   repeat                 Repeat this activity.
-  print mytext           Print some text. Useful for debugging scripts.
+  print My text          Print some text. Useful for debugging scripts.
+  print "  My text"      Use quotes to print leading spaces or blank lines.
+  print Value is $myvar  Print the value of a variable.
   start_sync             Start or reset the global timer. This is useful for
                          synchronising commands across concurrent activities.
+                         The current value of the global timer can be obtained
+                         using the sync() function.
   set_sync 12.5          Set the global timer to the specified number of
                          seconds. This is useful when testing a new script.
   wait_sync 3.5          Wait for the global timer to reach the specified
@@ -163,6 +167,10 @@ GPIO
   wait_low 1             Wait for input 1 to go low.
   output_high 1          Set output 1 high.
   output_low 1           Set output 1 low.
+  read_input 0 1         Uses a combination of input 0 and output 1 to read an
+                         analog input such as a photoresistor. The value is
+                         stored in the $input variable. See the 'photosensor'
+                         example script for more information.
   output_pwm 1 50        Set output 1 to a PWM value in the range 0 to 100.
   turn_on 1              Same as output_high 1. Use this for LEDs.
   flash 1 1.5            Flash the LED every 1.5 seconds until it is turned off.
@@ -201,6 +209,60 @@ GPIO
                          degrees continuously with each cycle taking 7.5
                          seconds.
   stop_pwm 1             Stop PWM on output 1.
+
+VARIABLES
+---------
+  set a = 1              Creates a variable a and assigns value 1 to it.
+  set b = $a + 1         Creates a variable b and uses an expression to assign
+                         a value to it.
+  set a = $a + 1         Increments a variable by 1.
+  set $myvar = -2        A variable name can be any length. The $ is optional
+                         on the left of an assignment but must be used in an
+                         expression to distinguish variables from functions.
+  set a[1] = 2           Subscripts (arrays) are supported and don't have to be
+                         sequential.
+  set a[$b+1] = 2        An expression can be used for the subscript.
+
+SPECIAL VARIABLES
+-----------------
+  print $input           The $input variable stores the last value read by the
+                         read_input command.
+
+OPERATORS
+---------
+  set a = ($b - 1) * $c  Any of the mathematical operators +, -, *, / may be
+                         used in an expression.
+  set a = ($b > $c) and not $d
+                         Any of the logical operators =, <, >, !=, <=, >=, and,
+                         or, not may be used in an expression.
+  set a = ($b = true)    A logical expression evaluates to 1 (true) or 0
+                         false). You may also use the constants true or false.
+  set a = 3 + ($b >= $c) An expression can contain any mix of mathematical and
+                         logical operators.
+
+FUNCTIONS
+---------
+  sync()                 Returns the current value of the global timer.
+  int($a)                Rounds $a down to its integer value.
+  trunc($a)              Same as int function.
+  round($a)              Rounds $a up or down to its nearest integer value.
+  rand()                 Returns a random number in the range 0 to 0.999.
+  set a = 1 + int(10 * rand())
+                         Sets $a to a random integer between 1 and 10.
+  pressed(0)             Returns true if the specified button is currently
+                         being pressed. You must specify an actual pin number
+                         or Pibrella input name, not a variable or expression.
+  released(0)            Returns true if the specified button is not currently
+                         being pressed.
+
+CONDITIONALS
+---------
+  if $winner
+  end_if
+  while $a != 1
+  end_while
+  for $a=0 ($a < 10) $a=$a+1
+  end_for
 ========================================
 
 Note: Any command that takes an output pin as its first parameter will also
