@@ -1,0 +1,33 @@
+Usage
+=====
+To run a script:
+   pioscript <script_file>
+
+To get help including the list of valid script commands:
+   pioscript --help
+
+A test script is included that doesn't require any GPIO pins
+to be connected:
+   pioscript scripts/sound
+
+If you don't hear any sound try running:
+   ./resetAudio.sh hdmi
+or
+   ./resetAudio.sh analog
+and then try again.
+
+The following scripts are also included but view the script before
+you run it to see what GPIO connections are required:
+   pioscript scripts/sample
+   pioscript scripts/longpress
+   pioscript scripts/servo
+   pioscript scripts/photosensor
+
+The Pibrella add-on board is fully supported. Try the following
+example scripts:
+   pioscript scripts/pibrella_example1
+   pioscript scripts/pibrella_example2
+   pioscript scripts/pibrella_longpress
+   pioscript scripts/pibrella_simon
+   pioscript scripts/pibrella_photosensor
+   pioscript scripts/pibrella_star_wars
