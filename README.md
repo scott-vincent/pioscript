@@ -3,7 +3,7 @@ pioscript
 
 A GPIO Scripting Language for the Raspberry Pi
 
-Pioscript is a script interpretor for the Raspberry Pi that sits somewhere between ScratchGPIO and Python. It is aimed at primary school children who want to progress from Scratch but aren't yet ready for the complexities of a full programming language such as Python. It is also aimed at adults who either find Python daunting or just have no interest in learning a full programming language but wish to explore GPIO on the Pi without investing too much time.
+Pioscript is a script interpretor for the Raspberry Pi that sits somewhere between ScratchGPIO and Python. It is aimed at primary school children who want to progress from Scratch but aren't yet ready for the complexities of a full programming language such as Python. It is also aimed at people who either find Python a bit daunting or just have no interest in learning a full programming language but wish to explore GPIO on the Pi without investing too much time.
 
 The concept originated from a diorama project and pioscript is ideal for tasks where you want the Pi to run headless and control your latest GPIO invention. Your script could run when the Pi boots up and you could use a GPIO switch to perform a clean shutdown.
 
