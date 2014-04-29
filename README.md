@@ -3,6 +3,8 @@ pioscript
 
 A GPIO Scripting Language for the Raspberry Pi
 
+Watch a video demonstration of pioscript here: http://youtu.be/078fXcP3jSI
+
 Pioscript is a script interpretor for the Raspberry Pi that sits somewhere between ScratchGPIO and Python. It is aimed at primary school children who want to progress from Scratch but aren't yet ready for the complexities of a full programming language such as Python. It is also aimed at people who either find Python a bit daunting or just have no interest in learning a full programming language but wish to explore GPIO on the Pi without investing too much time.
 
 For primary school children I would strongly recommend using the Pibrella add-on board which is fully supported by pioscript. This gives some protection to the Pi as it has some components pre-wired but still exposes some pins for adding up to 4 custom inputs and 4 custom outputs. Using a Pibrella with pioscript means you can specify pins by name, e.g. Button, Amber, InputA without having to worry about pin numbers.
