@@ -11,7 +11,7 @@ For primary school children I would strongly recommend using the Pibrella add-on
 
 The concept originated from a diorama project and pioscript is ideal for tasks where you want the Pi to run headless and control your latest GPIO invention. Your script could run when the Pi boots up and you could use a GPIO switch to perform a clean shutdown.
 
-Pioscript hides many of the complexities of a full language by allowing complex tasks to be performed in just a few lines of script and allows users to move on from a GUI driven programming environment to a command-line environment using an editor of their choice.
+Pioscript hides many of the complexities of a full language by allowing complex tasks to be performed in just a few lines of script and allows users to move on from a GUI driven programming environment to a command-line environment using an editor of their choice. I recommend using the nano text editor that comes pre-installed with Raspian.
 
 Advantages over ScratchGPIO
 ---------------------------
