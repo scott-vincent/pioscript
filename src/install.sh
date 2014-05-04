@@ -30,6 +30,11 @@ chown root /usr/local/bin/servod
 chmod 4755 /usr/local/bin/servod
 cd ..
 
+echo -- Pre-req: PortAudio
+cd portaudio
+make install
+cd ..
+
 echo -- PioScript
 cd ..
 cp pioscript /usr/local/bin

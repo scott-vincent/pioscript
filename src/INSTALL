@@ -3,7 +3,7 @@ Installation
 Untar the package and run the install script. The install script will
 install all the pre-requisites which are either included in the package
 or are retrieved via apt-get:
-   tar xvf pioscript.tar
+   tar xvf pioscript.tgz
    cd pioscript
    sudo ./install.sh
    more README

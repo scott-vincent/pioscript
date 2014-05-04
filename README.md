@@ -30,10 +30,10 @@ Other Advantages
 
 Let's Go
 --------
-The only file you need to download to get up and running is the pioscript.tar file. You can download this file directly on your Pi and install pioscript using the following commands:
+The only file you need to download to get up and running is the pioscript.tgz file. You can download this file directly on your Pi and install pioscript using the following commands:
 
-    wget https://raw.github.com/scott-vincent/pioscript/master/pioscript.tar
-    tar xvf pioscript.tar
+    wget https://raw.github.com/scott-vincent/pioscript/master/pioscript.tgz
+    tar xvf pioscript.tgz
     cd pioscript
     sudo ./install.sh
     more README

@@ -1670,8 +1670,8 @@ void Command::report()
 	printf("\n");
 	printf("Audio\n");
 	printf("-----\n");
-	printf("  play_sound mywavfile   Play a sound. Only 48 KHz 16-bit stereo WAV files are\n");
-	printf("                         supported.\n");
+	printf("  play_sound mywavfile   Play a sound. Only 44.1 KHz 16-bit stereo WAV files\n");
+	printf("                         are supported.\n");
 	printf("  play_loop mywavfile    Play in a continuous loop.\n");
 	printf("  play_wait mywavfile    Play a sound and wait for it to complete.\n");
 	printf("  play_from 4.5 mywavfile\n");

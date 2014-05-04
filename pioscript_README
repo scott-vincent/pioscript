@@ -6,7 +6,7 @@ Installation
 Untar the package and run the install script. The install script will
 install all the pre-requisites which are either included in the package
 or are retrieved via apt-get:
-   tar xvf pioscript.tar
+   tar xvf pioscript.tgz
    cd pioscript
    sudo ./install.sh
    more README
@@ -127,8 +127,8 @@ General
 
 Audio
 -----
-  play_sound mywavfile   Play a sound. Only 48 KHz 16-bit stereo WAV files are
-                         supported.
+  play_sound mywavfile   Play a sound. Only 44.1 KHz 16-bit stereo WAV files
+                         are supported.
   play_loop mywavfile    Play in a continuous loop.
   play_wait mywavfile    Play a sound and wait for it to complete.
   play_from 4.5 mywavfile

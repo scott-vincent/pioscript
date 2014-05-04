@@ -23,7 +23,7 @@ bool Audio::init()
 		return false;
 	}
  
-	int audio_rate = 48000;
+	int audio_rate = 44100;
 	Uint16 audio_format = AUDIO_S16SYS;
 	int audio_channels = 2;
 	int audio_buffers = 4096;
@@ -265,8 +265,8 @@ bool Audio::playFrom(int millis)
 		return false;
 	}
 
-	// 48000 x 2 (16-bit) x 2 (stereo) samples per secound
-	int newPos = 192 * millis;
+	// 44100 x 2 (16-bit) x 2 (stereo) samples per secound
+	int newPos = 1764 * (millis / 10);
 	if (newPos >= mSaved.alen){
 		fprintf(stderr, "Failed to position sound %s\n", mWavfile);
 		fprintf(stderr, "Error: Cannot play from point past end\n");
