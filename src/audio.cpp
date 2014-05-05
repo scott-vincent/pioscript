@@ -19,7 +19,7 @@ int Audio::mUniqueChannel = 0;
 bool Audio::init()
 {
 	if (SDL_Init(SDL_INIT_AUDIO) != 0) {
-		fprintf(stderr, "Unable to initialize SDL: %s\n", SDL_GetError());
+		fprintf(stderr, "Unable to initialise SDL: %s\n", SDL_GetError());
 		return false;
 	}
  
@@ -29,7 +29,7 @@ bool Audio::init()
 	int audio_buffers = 4096;
  
 	if (Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers) != 0) {
-		fprintf(stderr, "Unable to initialize audio: %s\n", Mix_GetError());
+		fprintf(stderr, "Unable to initialise audio: %s\n", Mix_GetError());
 		SDL_Quit();
 		return false;
 	}

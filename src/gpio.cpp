@@ -66,7 +66,7 @@ int Gpio::mRangeMapMax[Gpio::MAX_PWM_PINS];
 bool Gpio::init()
 {
     if (wiringPiSetup() == -1){
-        fprintf(stderr, "** Failed to initialize wiringPi\n");
+        fprintf(stderr, "** Failed to initialise wiringPi\n");
         return 1;
     }
 
