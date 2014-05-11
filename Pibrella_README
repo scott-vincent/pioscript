@@ -93,7 +93,3 @@ Branching
                          the expression is FALSE.
   end_for                Marks the end of a for block.
 ========================================
-
-Please note that if you use any of the Pibrella Buzzer commands you will not
-hear any sounds from the Sound commmands until you reboot the Pi.
-

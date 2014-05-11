@@ -90,9 +90,8 @@ periods of time the servo may get warm. To protect your servo you should also
 use the stop_pwm command after a short delay.
 
 Important Note 2: The sound_buzzer, play_note and play_song commands all use
-hardware PWM so if you use any of these commands you may no longer hear any
-sound samples play until you reboot your Pi. This is because hardware PWM
-interferes with the Pi's analog audio output.
+hardware PWM so if you use any of these commands you will need to reboot to
+hear sound from the audio jack. It does not affect sound played via HDMI.
 
 Command List
 ============

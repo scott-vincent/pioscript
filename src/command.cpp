@@ -1740,9 +1740,8 @@ void Command::reportAdvanced()
 	printf("use the stop_pwm command after a short delay.\n");
 	printf("\n");
 	printf("Important Note 2: The sound_buzzer, play_note and play_song commands all use\n");
-	printf("hardware PWM so if you use any of these commands you may no longer hear any\n");
-	printf("sound samples play until you reboot your Pi. This is because hardware PWM\n");
-	printf("interferes with the Pi's analog audio output.\n"); 
+	printf("hardware PWM so if you use any of these commands you will need to reboot to\n");
+	printf("hear sound from the audio jack. It does not affect sound played via HDMI.\n");
 	printf("\n");
 	printf("Command List\n");
 	printf("============\n");
@@ -2039,8 +2038,4 @@ void Command::reportPibrella()
 	printf("                         the expression is FALSE.\n");
 	printf("  end_for                Marks the end of a for block.\n");
 	printf("========================================\n");
-	printf("\n");
-	printf("Please note that if you use any of the Pibrella Buzzer commands you will not\n");
-	printf("hear any sounds from the Sound commmands until you reboot the Pi.\n");
-	printf("\n");
 }
