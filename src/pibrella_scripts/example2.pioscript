@@ -1,0 +1,36 @@
+:main
+use_addon Pibrella
+
+# Frere Jacques
+start Light Show
+play_song 2 c d e c c d e c e f g,2 e f g,2
+play_song 4 g a g f e,2 c,2 g a g f e,2 c,2
+play_song 2 c g0 c,2 c g0 c,2
+
+:Light Show
+flash Red 1
+wait 4
+turn_off Red
+set_brightness Amber 25
+wait 1
+set_brightness Amber 50
+wait 1
+set_brightness Amber 75
+wait 1
+set_brightness Amber 100
+wait 1
+turn_off Amber
+flash Green .25
+wait 4
+start_wait Finale
+start_wait Finale
+
+:Finale
+turn_on *
+wait .5
+turn_off *
+wait .5
+turn_on *
+wait .5
+turn_off *
+wait .5

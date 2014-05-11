@@ -1,0 +1,26 @@
+# This script plays some sounds. It does not require any
+# GPIO pins to be connected.
+
+:Main
+use_addon Pibrella
+# First play the sounds separately
+start_wait Left
+start_wait Right
+start_wait Centre
+
+# Now play the sounds together
+start Left
+start_wait Right
+start Left
+start_wait Right
+start Left
+start_wait Right
+
+:Left
+play_wait sounds/left.wav
+
+:Right
+play_wait sounds/right.wav
+
+:Centre
+play_wait sounds/centre.wav

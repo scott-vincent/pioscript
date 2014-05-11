@@ -1,0 +1,16 @@
+# This script demonstrates the use of PWM to control servos.
+#
+# It requires two servos to be connected on pins 15 and 16 and
+# a switch on pin 0.
+#
+# The servos will continually rotate in sine waves 90 degrees apart.
+# The script exits when switch 0 is pressed.
+#
+
+:main
+rangemap_pwm 15 2.6 22.6
+sine_pwm_loop 15 0 100 0 360 4
+rangemap_pwm 16 2.6 22.6
+sine_pwm_loop 16 0 100 90 450 4
+wait_press 0
+exit

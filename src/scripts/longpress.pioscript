@@ -1,0 +1,33 @@
+# This script demonstrates using a single switch for multiple
+# purposes. If the switch is pressed briefly it alternates
+# which LED is lit but if it is held down the script will exit.
+#
+# It requires 2 LEDs to be connected on pins 0 and 1
+# and 1 switch on pin 2.
+#
+# The script exits when switch 2 is pressed and held for more
+# than 1 second.
+
+:Main
+set ledNum = 0
+start Monitor Switch
+
+:Monitor Switch
+wait_press 2
+start_sync 
+while not released(2) and (sync() < 1)
+	wait .1
+end_while
+if sync() >= 1
+	exit
+end_if
+if $ledNum = 0
+	turn_off *
+	turn_on 0
+	set ledNum = 1
+else
+	turn_off *
+	turn_on 1
+	set ledNum = 0
+end_if
+repeat

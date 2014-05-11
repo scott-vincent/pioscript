@@ -1,0 +1,25 @@
+# This script reads a photoresistor on InputA and OutputE.
+# It constantly displays a value which represents the
+# brightness of the room where 0 is completely dark and
+# 100 is fully bright. The script exits when the button
+# is pressed.
+#
+# The read_input command works by strobing the output on
+# OutputE and measuring how long it takes for InputA to go
+# high (a 1uF capacitor must be wired in series with the
+# photoresistor). If you are using a Pibrella you should
+# also place a 6.2K ohm resistor across the capacitor to
+# drop the output voltage down from 5V to a safe input
+# voltage.
+
+:main
+use_addon Pibrella
+start Measure
+wait_press Button
+exit
+
+:Measure
+read_input InputA OutputE
+print $input
+wait .1
+repeat
