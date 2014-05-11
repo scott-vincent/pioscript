@@ -24,6 +24,7 @@
 #include <list>
 #include "method.h"
 #include "activity.h"
+#include "record.h"
 
 
 class Engine {
@@ -35,10 +36,12 @@ private:
 public:
 	static double syncTimer;
 	static bool displayOn;
+	static Record *recorder;
 
 	Engine();
 	~Engine();
-	bool execute(Method *main);
+	void displayOff() { displayOn = false; };
+	bool execute(Method *main, bool usesRecording);
 	static void sleep(int millisecs);
 	static double timeNow();
 	static pid_t findProcess(const char *name);

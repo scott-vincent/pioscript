@@ -46,26 +46,26 @@ void Pioscript::cleanup()
 /**
  *
  */
-void Pioscript::run(char *scriptfile)
+bool Pioscript::run(char *scriptfile)
 {
 	if (!init()){
 		fprintf(stderr, "PioScript init failed\n");
 		cleanup();
-		return;
+		return false;
 	}
 
 	printf("\n");
-	printf("---------------------------------------\n");
-	printf("  Parsing script %s\n", scriptfile);
-	printf("---------------------------------------\n");
-
+	printf("Checking script %s\n", scriptfile);
 	Script script(scriptfile);
 	if (!script.load()){
 		fprintf(stderr, "** Failed to load script\n");
 		cleanup();
-		return;
+		return false;
 	}
-	script.report();
+	if (Gpio::usingPibrella())
+		printf("No errors\n");
+	else
+		script.report();
 
 	printf("\n");
 	printf("---------------------------------------\n");
@@ -73,10 +73,13 @@ void Pioscript::run(char *scriptfile)
 	printf("---------------------------------------\n");
 
 	Engine engine;
-	if (!engine.execute(script.getMain())){
+	if (Gpio::usingPibrella())
+		engine.displayOff();
+
+	if (!engine.execute(script.getMain(), script.usesRecording())){
 		fprintf(stderr, "** Failed to execute script\n");
 		cleanup();
-		return;
+		return false;
 	}
 
 	printf("\n");
@@ -84,4 +87,5 @@ void Pioscript::run(char *scriptfile)
 	printf("  Completed script %s\n", scriptfile);
 	printf("---------------------------------------\n");
 	cleanup();
+	return true;
 }

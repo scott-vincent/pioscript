@@ -11,7 +11,7 @@ For primary school children I would strongly recommend using the Pibrella add-on
 
 The concept originated from a diorama project and pioscript is ideal for tasks where you want the Pi to run headless and control your latest GPIO invention. Your script could run when the Pi boots up and you could use a GPIO switch to perform a clean shutdown.
 
-Pioscript hides many of the complexities of a full language by allowing complex tasks to be performed in just a few lines of script and allows users to move on from a GUI driven programming environment to a command-line environment using an editor of their choice. I recommend using the nano text editor that comes pre-installed with Raspian.
+Pioscript hides many of the complexities of a full language by allowing complex tasks to be performed in just a few lines of script and allows users to move on from a GUI driven programming environment to a command-line environment using an editor of their choice. I recommend using either leafpad or nano which both come pre-installed with Raspian.
 
 Advantages over ScratchGPIO
 ---------------------------
@@ -30,12 +30,9 @@ Other Advantages
 
 Let's Go
 --------
-The only file you need to download to get up and running is the pioscript.tgz file. You can download this file directly on your Pi and install pioscript using the following commands:
+The only file you need to download to get up and running is the self-extracting installer. You can download this file directly on your Pi and install pioscript using the following commands:
 
-    wget https://raw.github.com/scott-vincent/pioscript/master/pioscript.tgz
-    tar xvf pioscript.tgz
-    cd pioscript
-    sudo ./install.sh
-    more README
-    
-See the pioscript_README file for install instructions, full documentation and command reference.
+    wget https://raw.github.com/scott-vincent/pioscript/master/pioscript_install
+    sudo bash pioscript_install
+
+After installation you should see two new folders on your desktop. One contains the Pibrella example scripts and one contains the scripts for non-Pibrella users. To run a script just double-click it. To view or change a script, right-click it and select the Leafpad editor.

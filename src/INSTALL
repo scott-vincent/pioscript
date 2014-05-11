@@ -1,9 +1,11 @@
 Installation
 ============
-Untar the package and run the install script. The install script will
-install all the pre-requisites which are either included in the package
-or are retrieved via apt-get:
-   tar xvf pioscript.tgz
-   cd pioscript
-   sudo ./install.sh
-   more README
+Run the self-extracting installer to uncompress and install the package.
+The install script will install all the pre-requisites which are either
+included in the package or are retrieved via apt-get:
+   sudo bash pioscript_install
+
+After installation you should see two new folders on your desktop. One
+contains the Pibrella example scripts and one contains the scripts for
+non-Pibrella users. To run a script just double-click it. To view or
+change a script, right-click it and select the Leafpad editor.

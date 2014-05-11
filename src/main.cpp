@@ -22,12 +22,17 @@ int main(int argc, char *argv[])
 {
 	if (argc < 2 || strcmp(argv[1], "/?") == 0 || strcmp(argv[1], "-?") == 0){
 		printf("Usage: pioscript <script_file>\n");
-		printf("Type 'pioscript --help' for more help\n");
+		printf("Type 'pioscript -help' for help when using the Pibrella\n");
+		printf("Type 'pioscript -morehelp' for advanced help\n");
 		return 1;
 	}
 
-	if (strcasecmp(argv[1], "--help") == 0){
-		Command::report();
+	if (strcasecmp(argv[1], "-help") == 0){
+		Command::reportPibrella();
+		return 1;
+	}
+	else if (strcasecmp(argv[1], "-morehelp") == 0){
+		Command::reportAdvanced();
 		return 1;
 	}
 
@@ -38,6 +43,8 @@ int main(int argc, char *argv[])
 	}
 
 	Pioscript pioscript;
-	pioscript.run(argv[1]);
+	if (!pioscript.run(argv[1]))
+		return 1;
+
 	return 0;
 }

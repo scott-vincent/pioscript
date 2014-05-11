@@ -14,6 +14,7 @@
 #include <ctype.h>
 #include "command.h"
 #include "audio.h"
+#include "record.h"
 #include "gpio.h"
 
 
@@ -42,6 +43,8 @@ Command::Command(char *name, int _lineNum, char *_lineStr)
 		type = Play_Loop;
 	else if (strcasecmp(name, "play_wait") == 0)
 		type = Play_Wait;
+	else if (strcasecmp(name, "play_sound_wait") == 0)
+		type = Play_Wait;
 	else if (strcasecmp(name, "play_from") == 0)
 		type = Play_From;
 	else if (strcasecmp(name, "pause") == 0)
@@ -54,6 +57,26 @@ Command::Command(char *name, int _lineNum, char *_lineStr)
 		type = Volume;
 	else if (strcasecmp(name, "fadeout") == 0)
 		type = FadeOut;
+	else if (strcasecmp(name, "record_sound") == 0)
+		type = Record_Sound;
+	else if (strcasecmp(name, "start_recording") == 0)
+		type = Start_Recording;
+	else if (strcasecmp(name, "stop_recording") == 0)
+		type = Stop_Recording;
+	else if (strcasecmp(name, "start_recording_wait") == 0)
+		type = Start_Recording_Wait;
+	else if (strcasecmp(name, "start_listening_wait") == 0)
+		type = Start_Listening_Wait;
+	else if (strcasecmp(name, "recording_level") == 0)
+		type = Recording_Level;
+	else if (strcasecmp(name, "stop_listening") == 0)
+		type = Stop_Recording;
+	else if (strcasecmp(name, "play_recording") == 0)
+		type = Play_Recording;
+	else if (strcasecmp(name, "play_recording_wait") == 0)
+		type = Play_Recording_Wait;
+	else if (strcasecmp(name, "save_recording") == 0)
+		type = Save_Recording;
 	else if (strcasecmp(name, "use_addon") == 0)
 		type = Use_Addon;
 	else if (strcasecmp(name, "play_note") == 0)
@@ -165,11 +188,33 @@ Command::Command(char *name, int _lineNum, char *_lineStr)
 /**
  *
  */
+bool Command::isMethod()
+{
+	return (type == Start || type == Start_Wait || type == Stop);
+}
+
+
+/**
+ *
+ */
 bool Command::isAudio()
 {
 	return (type == Play_Sound || type == Play_Loop || type == Play_Wait
 		|| type == Play_From || type == Pause || type == Resume
 		|| type == Stop_Sound || type == Volume || type == FadeOut);
+}
+
+
+/**
+ *
+ */
+bool Command::isRecording()
+{
+	return (type == Record_Sound || type == Start_Recording
+		|| type == Stop_Recording || type == Start_Recording_Wait
+		|| type == Start_Listening_Wait || type == Recording_Level
+		|| type == Play_Recording || type == Play_Recording_Wait
+		|| type == Save_Recording);
 }
 
 
@@ -226,9 +271,58 @@ bool Command::isGpioPwm()
 /**
  *
  */
-bool Command::isMethod()
+bool Command::isGpioLinear()
 {
-	return (type == Start || type == Start_Wait || type == Stop);
+	return (type == Linear_Pwm || type == Linear_Pwm_Wait
+		|| type == Linear_Pwm_Loop);
+}
+
+
+/**
+ *
+ */
+bool Command::isGpioSine()
+{
+	return (type == Sine_Pwm || type == Sine_Pwm_Wait
+		|| type == Sine_Pwm_Loop);
+}
+
+
+/**
+ *
+ */
+bool Command::isGpioLoop()
+{
+	return (type == Random_Pwm_Loop || type == Linear_Pwm_Loop
+		|| type == Sine_Pwm_Loop);
+}
+
+
+/**
+ *
+ */
+bool Command::isGpioWait()
+{
+	return (type == Linear_Pwm-Wait || type == Sine_Pwm_Wait);
+}
+
+
+/**
+ *
+ */
+bool Command::isStartNest()
+{
+	return (type == If || type == While || type == For);
+}
+
+
+/**
+ *
+ */
+bool Command::isEndNest()
+{
+	return (type == Else || type == End_If || type == End_While
+		|| type == End_For);
 }
 
 
@@ -281,7 +375,7 @@ bool Command::validateParams(char *params)
 			break;
 
 		case Output_Pwm:
-			// Expect pin number (or range) and 1 decimal param
+			// Expect pin number (or range) and 1 number
 			if (!(pos = addPinRangeParam(0, pos, true)))
 				return false;
 
@@ -291,7 +385,7 @@ bool Command::validateParams(char *params)
 			break;
 
 		case Flash:
-			// Expect pin number (or range) and 1 decimal param
+			// Expect pin number (or range) and 1 number
 			if (!(pos = addPinRangeParam(0, pos, true)))
 				return false;
 			
@@ -306,7 +400,7 @@ bool Command::validateParams(char *params)
 			break;
 
 		case Play_Note:
-			// Expect 1 note name/number and 1 decimal param.
+			// Expect 1 note name/number and 1 number
 			if (!(pos = addNoteParam(0, pos, false)))
 				return false;
 
@@ -323,7 +417,7 @@ bool Command::validateParams(char *params)
 			break;
 
 		case Sound_Buzzer:
-			// Expect 1 decimal param.
+			// Expect 1 number
 			param[0].setValue(1);
 			if (!(pos = addParam(8, pos)))
 				return false;
@@ -331,7 +425,7 @@ bool Command::validateParams(char *params)
 			break;
 
 		case Play_Song:
-			// Expect 1 decimal and 1 string.
+			// Expect 1 number and 1 string.
 			if (!(pos = addParam(8, pos)))
 				return false;
 
@@ -341,7 +435,7 @@ bool Command::validateParams(char *params)
 			break;
 
 		case Rangemap_Pwm:
-			// Expect pin number and 2 decimal params
+			// Expect pin number and 2 numbers
 			if (!(pos = addPinParam(0, pos)))
 				return false;
 
@@ -354,7 +448,7 @@ bool Command::validateParams(char *params)
 			break;
 
 		case Random_Pwm:
-			// Expect pin number (or range) and 4 decimal params
+			// Expect pin number (or range) and 4 numbers
 			if (!(pos = addPinRangeParam(0, pos, true)))
 				return false;
 
@@ -376,7 +470,7 @@ bool Command::validateParams(char *params)
 		case Linear_Pwm:
 		case Linear_Pwm_Wait:
 		case Linear_Pwm_Loop:
-			// Expect pin number (or range) and 3 decimal params
+			// Expect pin number (or range) and 3 numbers
 			if (!(pos = addPinRangeParam(0, pos, true)))
 				return false;
 
@@ -394,8 +488,7 @@ bool Command::validateParams(char *params)
 		case Sine_Pwm:
 		case Sine_Pwm_Wait:
 		case Sine_Pwm_Loop:
-			// Expect pin number (or range), 2 decimal, 2 pos/neg
-			// and 1 decimal params.
+			// Expect pin number (or range) and 5 numbers
 			if (!(pos = addPinRangeParam(0, pos, true)))
 				return false;
 
@@ -419,7 +512,11 @@ bool Command::validateParams(char *params)
 		case Wait:
 		case Set_Sync:
 		case Wait_Sync:
-			// Expect 1 decimal param
+		case Record_Sound:
+		case Start_Recording_Wait:
+		case Start_Listening_Wait:
+		case Recording_Level:
+			// Expect 1 number
 			if (!(pos = addParam(0, pos)))
 				return false;
 
@@ -428,7 +525,7 @@ bool Command::validateParams(char *params)
 		case Play_From:
 		case Volume:
 		case FadeOut:
-			// Expect 1 decimal and 1 string param
+			// Expect 1 number and 1 string
 			if (!(pos = addParam(0, pos)))
 				return false;
 
@@ -443,12 +540,13 @@ bool Command::validateParams(char *params)
 		case Pause:
 		case Resume:
 		case Stop_Sound:
+		case Save_Recording:
 		case Start:
 		case Stop:
 		case Start_Wait:
 		case Print:
 		case Use_Addon:
-			// Expect 1 string param
+			// Expect 1 string
 			if (!(pos = addStrParam(0, pos)))
 				return false;
 
@@ -463,7 +561,7 @@ bool Command::validateParams(char *params)
 
 		case If:
 		case While:
-			// Expect 1 string param
+			// Expect 1 string
 			if (!(pos = addStrParam(0, pos)))
 				return false;
 
@@ -477,6 +575,10 @@ bool Command::validateParams(char *params)
 			break;
 
 		// Expect no params
+		case Start_Recording:
+		case Stop_Recording:
+		case Play_Recording:
+		case Play_Recording_Wait:
 		case Repeat:
 		case Start_Sync:
 		case Else:
@@ -505,15 +607,6 @@ bool Command::validateParams(char *params)
 	if (type == Use_Addon){
 		if (strcasecmp(nameParam.getStrValue().c_str(), "Pibrella") != 0){
 			fprintf(stderr, "Only the Pibrella addon is currently supported.\n");
-			return false;
-		}
-	}
-
-	if (type == Play_Note || type == Loop_Note
-			|| type == Stop_Note || type == Play_Song)
-	{
-		if (!Gpio::usingPibrella()){
-			fprintf(stderr, "This command can only be used with the Pibrella add-on board. The use_addon command must appear in the script before this command.\n");
 			return false;
 		}
 	}
@@ -1276,6 +1369,7 @@ bool Command::validParam(int num)
 	bool isPin = false;
 	bool isPwmPin = false;
 	bool isVolume = false;
+	bool isRecord = false;
 	bool isNote = false;
 	int paramVal = param[num].getValue();
 
@@ -1412,6 +1506,16 @@ bool Command::validParam(int num)
 				}
 				break;
 
+			case Record_Sound:
+			case Start_Recording_Wait:
+			case Start_Listening_Wait:
+			case Recording_Level:
+				switch (num){
+					case 0: isRecord = true; allowDecimal = true; break;
+					default: validated = false;
+				}
+				break;
+
 			case Play_Note:
 				switch (num){
 					case 0: isNote = true; break;
@@ -1497,6 +1601,11 @@ bool Command::validParam(int num)
 
 	if (isVolume && paramVal > Audio::MAX_VOLUME * 1000){
 		fprintf(stderr, "Volume must be in the range 0 to %d.0. Found value = %s\n", Audio::MAX_VOLUME, paramToStr(num));
+		return false;
+	}
+
+	if (isRecord && paramVal > Record::MAX_DURATION * 1000){
+		fprintf(stderr, "Value must be in the range 0 to %d.0. Found value = %s\n", Record::MAX_DURATION, paramToStr(num));
 		return false;
 	}
 
@@ -1586,10 +1695,10 @@ char *Command::paramToStr(int num)
 /**
  *
  */
-void Command::report()
+void Command::reportAdvanced()
 {
 	printf("\n");
-	printf("Pioscript v2.0    Scott Vincent    April 2014    email: scottvincent@yahoo.com\n");
+	printf("Pioscript v2.1    Scott Vincent    May 2014    email: scottvincent@yahoo.com\n");
 	printf("\n");
 	printf("GPIO input and output pins should be specified using wiringPi numbering,\n");
 	printf("i.e. pin 0 is physical pin 11 on the Raspberry Pi connector.\n");
@@ -1630,10 +1739,10 @@ void Command::report()
 	printf("periods of time the servo may get warm. To protect your servo you should also\n");
 	printf("use the stop_pwm command after a short delay.\n");
 	printf("\n");
-	printf("Important Note 2: If you are using the Pibrella add-on and use either the\n");
-	printf("sound_buzzer, play_note or play_song commands you will no longer hear any sound\n");
-	printf("samples play until you reboot your Pi. This is because the internal buzzer\n");
-	printf("uses hardware PWM which interferes with the Pi's audio output.\n"); 
+	printf("Important Note 2: The sound_buzzer, play_note and play_song commands all use\n");
+	printf("hardware PWM so if you use any of these commands you may no longer hear any\n");
+	printf("sound samples play until you reboot your Pi. This is because hardware PWM\n");
+	printf("interferes with the Pi's analog audio output.\n"); 
 	printf("\n");
 	printf("Command List\n");
 	printf("============\n");
@@ -1668,7 +1777,7 @@ void Command::report()
 	printf("                         Green, InputA, InputB, InputC, InputD, OutputE,\n");
 	printf("                         OutputF, OutputG, OutputH.\n");
 	printf("\n");
-	printf("Audio\n");
+	printf("Sound\n");
 	printf("-----\n");
 	printf("  play_sound mywavfile   Play a sound. Only 44.1 KHz 16-bit stereo WAV files\n");
 	printf("                         are supported.\n");
@@ -1688,12 +1797,10 @@ void Command::report()
 	printf("  fadeout 2.5 mywavfile  Fade a sound out over the specified number of seconds.\n");
 	printf("  fadeout 5 *            Fade out all currently playing sounds over the\n");
 	printf("                         specified number of seconds.\n");
-	printf("  sound_buzzer 2         Pibrella only. Sound the buzzer for the specified\n");
-	printf("                         number of seconds.\n");
-	printf("  play_note 60 .5        Pibrella only. Play the specified MIDI note for the\n");
-	printf("                         specified number of seconds. Note 60 is middle C. The\n");
-	printf("                         buzzer is limited to 3 octaves so note must be between\n");
-	printf("                         48 and 84.\n");
+	printf("  sound_buzzer 2         Sound the buzzer for the specified number of seconds.\n");
+	printf("  play_note 60 .5        Play the specified MIDI note for the specified number\n");
+	printf("                         of seconds. Note 60 is middle C. The buzzer is limited\n");
+	printf("                         to 3 octaves so note must be between 48 and 84.\n");
 	printf("  play_note A#2 .5       You can use note names instead of MIDI note numbers.\n");
 	printf("                         Specify A to G or - for a rest optionally followed by\n");
 	printf("                         # (sharp) or b (flat) optionally followed by an octave\n");
@@ -1756,7 +1863,7 @@ void Command::report()
 	printf("                         seconds.\n");
 	printf("  stop_pwm 1             Stop PWM on output 1.\n");
 	printf("\n");
-	printf("VARIABLES\n");
+	printf("Variables\n");
 	printf("---------\n");
 	printf("  set a = 1              Creates a variable a and assigns value 1 to it.\n");
 	printf("  set b = $a + 1         Creates a variable b and uses an expression to assign\n");
@@ -1769,12 +1876,12 @@ void Command::report()
 	printf("                         sequential.\n");
 	printf("  set a[$b+1] = 2        An expression can be used for the subscript.\n");
 	printf("\n");
-	printf("SPECIAL VARIABLES\n");
+	printf("Special Variables\n");
 	printf("-----------------\n");
 	printf("  print $input           The $input variable stores the last value read by the\n");
 	printf("                         read_input command.\n");
 	printf("\n");
-	printf("OPERATORS\n");
+	printf("Operators\n");
 	printf("---------\n");
 	printf("  set a = ($b - 1) * $c  Any of the mathematical operators +, -, *, / may be\n");
 	printf("                         used in an expression.\n");
@@ -1786,7 +1893,7 @@ void Command::report()
 	printf("  set a = 3 + ($b >= $c) An expression can contain any mix of mathematical and\n");
 	printf("                         logical operators.\n");
 	printf("\n");
-	printf("FUNCTIONS\n");
+	printf("Functions\n");
 	printf("---------\n");
 	printf("  sync()                 Returns the current value of the global timer.\n");
 	printf("  int($a)                Rounds $a down to its integer value.\n");
@@ -1801,8 +1908,8 @@ void Command::report()
 	printf("  released(0)            Returns true if the specified button is not currently\n");
 	printf("                         being pressed.\n");
 	printf("\n");
-	printf("CONDITIONALS\n");
-	printf("---------\n");
+	printf("Conditionals\n");
+	printf("------------\n");
 	printf("  if $winner             Only executes the commands between if and else/end_if\n");
 	printf("                         when the expression evaluates to true.\n");
 	printf("  else                   Only executes the commands between else and end_if when\n");
@@ -1828,5 +1935,112 @@ void Command::report()
 	printf("  linear_pwm 3-11 5 95 7.5\n");
 	printf("                         Performs linear PWM output on all pins from 3 to 11.\n");
 	printf("  output_high *          Sets all defined outputs high.\n");
+	printf("\n");
+}
+
+
+/**
+ *
+ */
+void Command::reportPibrella()
+{
+	printf("\n");
+	printf("Pioscript v2.1    Scott Vincent    May 2014    email: scottvincent@yahoo.com\n");
+	printf("\n");
+	printf("Command List\n");
+	printf("============\n");
+	printf("\n");
+	printf("General\n");
+	printf("-------\n");
+	printf("  use_addon pibrella     Tell pioscript you are using a Pibrella. You can then\n");
+	printf("                         use the following names for inputs and outputs :-\n");
+	printf("     Pibrella Inputs: Button, InputA, InputB, InputC, InputD.\n");
+	printf("     Pibrella Outputs: Red, Amber, Green, OutputE, OutputF, OutputG, OutputH.\n");
+	printf("  #Comment               This is a comment.\n");
+	printf("  :main                  The main activity runs when the script starts.\n");
+	printf("  wait 1.5               Wait for 1.5 seconds.\n");
+	printf("  repeat                 Repeat an activity.\n");
+	printf("  print My text          Print some text.\n");
+	printf("  print Value is $myvar  Print a variable.\n");
+	printf("  exit                   Stop all activities and quit.\n");
+	printf("  :My Activity           Define an activity.\n");
+	printf("  start My Activity      Start an activity.\n");
+	printf("  start_wait My Activity Start an activity and wait for it to complete.\n");
+	printf("  stop My Activity       Stop an activity.\n");
+	printf("\n");
+	printf("Pibrella Buzzer\n");
+	printf("---------------\n");
+	printf("  sound_buzzer 0.5       Sound the buzzer for 0.5 seconds.\n");
+	printf("  play_note C 1          Play note C for 1 second.\n");
+	printf("  play_note A#2 .5       Play note A# in octave 2 for 0.5 seconds.\n");
+	printf("  play_song 1 A#2,.5 C,.25 G -,2 Db0,4 etc.\n");
+	printf("                         Play a sequence of notes at speed 1. Use - for a rest.\n");
+	printf("\n");
+	printf("Sound\n");
+	printf("-----\n");
+	printf("  play_sound mywavfile   Play a sound.\n");
+	printf("  play_loop mywavfile    Play in a continuous loop.\n");
+	printf("  play_wait mywavfile    Play a sound and wait for it to complete.\n");
+	printf("  stop_sound mywavfile   Stop playing a sound.\n");
+	printf("  stop_sound *           Stop all sounds.\n");
+	printf("\n");
+	printf("Input/Output\n");
+	printf("------------\n");
+	printf("  wait_press Button      Wait for Button to be pressed.\n");
+	printf("  wait_release Button    Wait for Button to be released.\n");
+	printf("  turn_on Red            Turn on the Red LED.\n");
+	printf("  turn_off Red           Turn off the Red LED.\n");
+	printf("  flash Amber 1.5        Flash the Amber LED every 1.5 seconds.\n");
+	printf("  turn_off Amber         Turn off the Amber LED.\n");
+	printf("  set_power OutputE 50   Set the motor speed to 50%%.\n");
+	printf("  turn_off OutputE       Turn off the motor.\n");
+	printf("  set_brightness Red 50  Set the Red LED brightness to 50%%.\n");
+	printf("  read_input InputA OutputE\n");
+	printf("                         Read a photo-resistor on InputA and OutputE.\n");
+	printf("  print $input           Show the value read from the photo-resistor.\n");
+	printf("\n");
+	printf("Variables\n");
+	printf("---------\n");
+	printf("  set $val = 1           Set a variable to a value.\n");
+	printf("  set $val = $val + 1    Add 1 to a variable.\n");
+	printf("  set $val[1] = 2        Create a set of variables.\n");
+	printf("  set $val[2] = 5\n");
+	printf("\n");
+	printf("Operators\n");
+	printf("---------\n");
+	printf("  set $val = 1 + 2 * 3 / 4\n");
+	printf("                         Use the mathematical operators +, -, *, /.\n");
+	printf("  set $val = ($score > $high_score) AND NOT $lost\n");
+	printf("                         Use the logical operators =, <, >, !=, <=, >=, AND, OR.\n");
+	printf("  set $finished = TRUE   You can also use TRUE and FALSE instead of 1 and 0.\n");
+	printf("\n");
+	printf("Functions\n");
+	printf("---------\n");
+	printf("  int($val)              Rounds $val down to the nearest value.\n");
+	printf("  trunc($val)            Same as int function.\n");
+	printf("  round($val)            Rounds $val up or down to the nearest value.\n");
+	printf("  rand()                 Returns a random number in the range 0 to 0.999.\n");
+	printf("  set $val = 1 + int(5 * rand())\n");
+	printf("                         Sets $val to a random value between 1 and 5.\n");
+	printf("  pressed(Button)        Returns TRUE if Button is currently being pressed.\n");
+	printf("  released(Button)       Returns TRUE if Button is not currently being pressed.\n");
+	printf("\n");
+	printf("Branching\n");
+	printf("---------\n");
+	printf("  if $val = 1            Only do the following commands if expression is TRUE.\n");
+	printf("  else                   Only do the following commands if expression is FALSE.\n");
+	printf("  end_if                 Marks the end of an if block.\n");
+	printf("  while $val < 10        Keep doing the following commands until the expression\n");
+	printf("                         is FALSE.\n");
+	printf("  end_while              Marks the end of a while block.\n");
+	printf("  for ($a = 0) ($a < 10) ($a = $a + 1)\n");
+	printf("                         Set $a to 0 and do the following commands. Then add 1\n");
+	printf("                         to $a and do the commands again. Keep repeating until\n");
+	printf("                         the expression is FALSE.\n");
+	printf("  end_for                Marks the end of a for block.\n");
+	printf("========================================\n");
+	printf("\n");
+	printf("Please note that if you use any of the Pibrella Buzzer commands you will not\n");
+	printf("hear any sounds from the Sound commmands until you reboot the Pi.\n");
 	printf("\n");
 }

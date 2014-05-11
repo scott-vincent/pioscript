@@ -19,6 +19,7 @@
 // Global sync timer
 double Engine::syncTimer = 0;
 bool Engine::displayOn = true;
+Record *Engine::recorder = NULL;
 
 
 /**
@@ -35,7 +36,7 @@ Engine::Engine()
 Engine::~Engine()
 {
 	while (true){
-		std::list<Activity*>::iterator iter = activities.begin();
+		auto iter = activities.begin();
 		if (iter == activities.end())
 			break;
 
@@ -43,6 +44,9 @@ Engine::~Engine()
 		delete activity;
 		activities.erase(iter);
 	}
+
+	if (recorder)
+		delete recorder;
 }
 
 
@@ -73,8 +77,14 @@ bool Engine::newActivity(Method *method, Activity *waitingActivity)
 /**
  *
  */
-bool Engine::execute(Method *main)
+bool Engine::execute(Method *main, bool usesRecording)
 {
+	if (usesRecording){
+		recorder = new Record();
+		if (!recorder->initialised())
+			return false;
+	}
+
 	if (!Gpio::startMonitor())
 		return false;
 
@@ -86,7 +96,7 @@ bool Engine::execute(Method *main)
 
 		// Advance each activity (execute one command)
 		bool idle = true;
-		std::list<Activity*>::iterator iter = activities.begin();
+		auto iter = activities.begin();
 		while (iter != activities.end()){
 			Activity *activity = *iter;
 
@@ -143,8 +153,7 @@ bool Engine::execute(Method *main)
 			if (method){
 				// Search activities in reverse order so, if there are
 				// multiple, last one started will be first one stopped.
-				for (std::list<Activity*>::iterator
-					it = activities.end(); it != activities.begin();)
+				for (auto it = activities.end(); it != activities.begin();)
 				{
 					it--;
 					Activity *act = *it;
@@ -186,9 +195,9 @@ bool Engine::execute(Method *main)
 			}
 		}
 
-		// If there is no activity we sleep for 5ms
+		// If there is no activity we sleep for 10ms
 		if (idle){
-			Engine::sleep(5);
+			Engine::sleep(10);
 		}
 	}
 

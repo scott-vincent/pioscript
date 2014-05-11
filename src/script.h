@@ -29,19 +29,21 @@ private:
     std::map<std::string, Audio*> mSounds;
     std::map<int, Gpio*> mPins;
     std::list<Command*> nestedCommands;
+	bool mUsesRecording;
 
 public:
 	Script(char *filename);
 	~Script();
 	bool load();
 	Method* getMain() { return mMain; };
+	bool usesRecording() { return mUsesRecording; };
 	void report();
 
 private:
-	bool defineMethod(char *name, int lineNum);
+	bool defineMethod(const char *name, int lineNum);
 	bool orphanNestingCheck();
-	Method* addMethod(char *name, int lineNum);
-	Audio* addAudio(char *name);
+	Method* addMethod(const char *name, int lineNum);
+	Audio* addAudio(const char *name, int lineNum);
 	Gpio* addGpio(int pin, Gpio::Type type);
 	bool addFuncObjects(Command *command, int paramNum);
 	bool addCommand(char *name, char *params, int lineNum, char *lineStr);

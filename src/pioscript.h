@@ -18,7 +18,7 @@ class Pioscript {
 public:
 	bool init();
 	void cleanup();
-	void run(char *scriptfile);
+	bool run(char *scriptfile);
 };
 
 #endif

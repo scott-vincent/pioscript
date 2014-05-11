@@ -108,8 +108,7 @@ bool Gpio::startMonitor()
 		return true;
 
 	bool usingPwm = false;
-	for (std::list<Gpio*>::iterator iter =
-		mMonitorList.begin(); iter != mMonitorList.end(); iter++)
+	for (auto iter = mMonitorList.begin(); iter != mMonitorList.end(); iter++)
 	{
 		Gpio *obj = *iter;
 		int pin = obj->getPin();
@@ -222,8 +221,7 @@ bool Gpio::startServoBlaster()
 	for (int i = 0; i < MAX_PWM_PINS; i++)
 		servoBlasterPin[i] = 0;
 
-	for (std::list<Gpio*>::iterator iter =
-		mMonitorList.begin(); iter != mMonitorList.end(); iter++)
+	for (auto iter = mMonitorList.begin(); iter != mMonitorList.end(); iter++)
 	{
 		Gpio *obj = *iter;
 		if (obj->getType() == PWM){
@@ -317,8 +315,7 @@ void *Gpio::monitor(void *arg)
 	mMonitorRunning = true;
 	while (mMonitorRunning){
 		double now = Engine::timeNow();
-		for (std::list<Gpio*>::iterator iter =
-			mMonitorList.begin(); iter != mMonitorList.end(); iter++)
+		for (auto iter = mMonitorList.begin(); iter != mMonitorList.end(); iter++)
 		{
 			Gpio *obj = *iter;
 			int pin = obj->getPin();
@@ -787,11 +784,11 @@ void Gpio::outputAndPwm()
 {
 	mType = PWM;
 
-    std::list<Gpio*>::iterator outIter = std::find(mOutputList.begin(), mOutputList.end(), this);
+    auto outIter = std::find(mOutputList.begin(), mOutputList.end(), this);
     if (outIter == mOutputList.end())
 		mOutputList.push_back(this);
 
-    std::list<Gpio*>::iterator monIter = std::find(mMonitorList.begin(), mMonitorList.end(), this);
+    auto monIter = std::find(mMonitorList.begin(), mMonitorList.end(), this);
     if (monIter == mMonitorList.end())
 		mMonitorList.push_back(this);
 }
@@ -895,8 +892,7 @@ bool Gpio::setStateRange(int state, int startPin, int endPin)
 			digitalWrite(obj->getPin(), state);
 	}
 
-	for (std::list<Gpio*>::iterator iter =
-		mMonitorList.begin(); iter != mMonitorList.end(); iter++)
+	for (auto iter = mMonitorList.begin(); iter != mMonitorList.end(); iter++)
 	{
 		Gpio *obj = *iter;
 		int pin = obj->getPin();
@@ -983,8 +979,7 @@ bool Gpio::setPwmRange(int milliVal, int startPin, int endPin)
 		return false;
 	}
 
-	for (std::list<Gpio*>::iterator iter =
-		mMonitorList.begin(); iter != mMonitorList.end(); iter++)
+	for (auto iter = mMonitorList.begin(); iter != mMonitorList.end(); iter++)
 	{
 		Gpio *obj = *iter;
 		int pin = obj->getPin();
@@ -1037,8 +1032,7 @@ bool Gpio::startPwmRange(MonitorType pwmType, int startPin, int endPin,
 	int param1, int param2, int param3, int param4, int param5, bool loop)
 {
 	bool res = true;
-	for (std::list<Gpio*>::iterator iter =
-		mMonitorList.begin(); iter != mMonitorList.end(); iter++)
+	for (auto iter = mMonitorList.begin(); iter != mMonitorList.end(); iter++)
 	{
 		Gpio *obj = *iter;
 		int pin = obj->getPin();
@@ -1085,8 +1079,7 @@ bool Gpio::stopPwmRange(int startPin, int endPin)
 		return false;
 	}
 
-	for (std::list<Gpio*>::iterator iter =
-		mMonitorList.begin(); iter != mMonitorList.end(); iter++)
+	for (auto iter = mMonitorList.begin(); iter != mMonitorList.end(); iter++)
 	{
 		Gpio *obj = *iter;
 		int pin = obj->getPin();

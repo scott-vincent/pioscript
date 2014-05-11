@@ -11,13 +11,18 @@
 #include "audio.h"
 
 bool Audio::mInit = false;
+bool Audio::mUsingAudio = false;
 int Audio::mUniqueChannel = 0;
+
 
 /**
  * Global init to setup SDL library
  */
 bool Audio::init()
 {
+	if (mInit)
+		return true;
+
 	if (SDL_Init(SDL_INIT_AUDIO) != 0) {
 		fprintf(stderr, "Unable to initialise SDL: %s\n", SDL_GetError());
 		return false;
@@ -55,27 +60,64 @@ void Audio::cleanup()
 
 
 /**
+ * SDL_Mixer doesn't play nicely with portaudio so we need
+ * to disable it before starting a recording.
+ */
+void Audio::disable()
+{
+	if (mUsingAudio){
+		// Closedown audio but don't free any chunks
+		cleanup();
+	}
+}
+
+
+/**
+ * This method re-enables SDL_Mixer after it it has been
+ * disabled.
+ */
+void Audio::enable()
+{
+	if (mUsingAudio){
+		// Startup audio so existing chunks are now playable again
+		init();
+	}
+}
+
+
+/**
  * Constructor loads a new sound sample
  */
-Audio::Audio(const char *wavfile)
+Audio::Audio(const char *wavfile, int lineNum)
 {
 	strcpy(mWavfile, wavfile);
+	mLineNum = lineNum;
 	mSound = NULL;
 	mChannel = -1;
 
-	if (!mInit)
+	if (!mInit){
+		mUsingAudio = true;
 		init();
-
-	if (access(wavfile, 0) != 0){
-		fprintf(stderr, "File %s not found\n", wavfile);
-		return;
 	}
 
-	mSound = Mix_LoadWAV(wavfile);
-	if (!mSound){
-		fprintf(stderr, "Failed to load sound %s\n", wavfile);
-		fprintf(stderr, "Error: %s\n", Mix_GetError());
-		return;
+	if (access(wavfile, 0) == 0){
+		mMissing = false;
+		mSound = Mix_LoadWAV(wavfile);
+		if (!mSound){
+			fprintf(stderr, "Failed to load sound %s\n", wavfile);
+			fprintf(stderr, "Error: %s\n", Mix_GetError());
+			return;
+		}
+	}
+	else {
+		// May get replaced by a recorded sample so just
+		// create silence for now.
+		mMissing = true;
+		char silence[4];
+		for (int i = 0; i < 4; i++){
+			silence[i] = 0;
+		}
+		mSound = Mix_QuickLoad_RAW((Uint8*)silence, 4);
 	}
 
 	// Allocate a unique channel for this sound
@@ -107,13 +149,32 @@ Audio::~Audio()
 }
 
 
+/*
+ * Replace the loaded WAV with a new one. This is called
+ * when the recorder saves a WAV file that is being
+ * used for playback. The WAV data comes straight from
+ * the recorder's memory so it doesn't need to be loaded.
+ */
+bool Audio::replaceWAV(void *data, int dataSize)
+{
+	if (!mInit){
+		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
+		return false;
+	}
+
+	Mix_FreeChunk(mSound);
+	mSound = Mix_QuickLoad_RAW((Uint8*)data, dataSize);
+	return true;
+}
+
+
 /**
  * loops = 0 to play sound once, -1 to loop indefinitely
  */
 bool Audio::play(int loops)
 {
 	if (!mInit){
-		fprintf(stderr, "Audio not initialised\n");
+		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
 		return false;
 	}
 
@@ -139,7 +200,7 @@ bool Audio::play(int loops)
 bool Audio::isPlaying()
 {
 	if (!mInit){
-		fprintf(stderr, "Audio not initialised\n");
+		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
 		return false;
 	}
 
@@ -153,7 +214,7 @@ bool Audio::isPlaying()
 bool Audio::pause()
 {
 	if (!mInit){
-		fprintf(stderr, "Audio not initialised\n");
+		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
 		return false;
 	}
 
@@ -173,7 +234,7 @@ bool Audio::pause()
 bool Audio::resume()
 {
 	if (!mInit){
-		fprintf(stderr, "Audio not initialised\n");
+		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
 		return false;
 	}
 
@@ -193,7 +254,7 @@ bool Audio::resume()
 bool Audio::halt()
 {
 	if (!mInit){
-		fprintf(stderr, "Audio not initialised\n");
+		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
 		return false;
 	}
 
@@ -213,7 +274,7 @@ bool Audio::halt()
 bool Audio::volume(int millis)
 {
 	if (!mInit){
-		fprintf(stderr, "Audio not initialised\n");
+		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
 		return false;
 	}
 
@@ -235,7 +296,7 @@ bool Audio::volume(int millis)
 bool Audio::fadeout(int millis)
 {
 	if (!mInit){
-		fprintf(stderr, "Audio not initialised\n");
+		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
 		return false;
 	}
 
@@ -256,7 +317,7 @@ bool Audio::fadeout(int millis)
 bool Audio::playFrom(int millis)
 {
 	if (!mInit){
-		fprintf(stderr, "Audio not initialised\n");
+		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
 		return false;
 	}
 
@@ -291,7 +352,7 @@ bool Audio::playFrom(int millis)
 bool Audio::pauseAll()
 {
 	if (!mInit){
-		fprintf(stderr, "Audio not initialised\n");
+		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
 		return false;
 	}
 
@@ -306,7 +367,7 @@ bool Audio::pauseAll()
 bool Audio::resumeAll()
 {
 	if (!mInit){
-		fprintf(stderr, "Audio not initialised\n");
+		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
 		return false;
 	}
 
@@ -321,7 +382,7 @@ bool Audio::resumeAll()
 bool Audio::haltAll()
 {
 	if (!mInit){
-		fprintf(stderr, "Audio not initialised\n");
+		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
 		return false;
 	}
 
@@ -336,7 +397,7 @@ bool Audio::haltAll()
 bool Audio::volumeAll(int millis)
 {
 	if (!mInit){
-		fprintf(stderr, "Audio not initialised\n");
+		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
 		return false;
 	}
 
@@ -353,7 +414,7 @@ bool Audio::volumeAll(int millis)
 bool Audio::fadeoutAll(int millis)
 {
 	if (!mInit){
-		fprintf(stderr, "Audio not initialised\n");
+		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
 		return false;
 	}
 

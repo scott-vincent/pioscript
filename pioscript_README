@@ -1,15 +1,17 @@
 
-Pioscript v2.0    Scott Vincent    April 2014    email: scottvincent@yahoo.com
+Pioscript v2.1    Scott Vincent    May 2014    email: scottvincent@yahoo.com
 
 Installation
 ============
-Untar the package and run the install script. The install script will
-install all the pre-requisites which are either included in the package
-or are retrieved via apt-get:
-   tar xvf pioscript.tgz
-   cd pioscript
-   sudo ./install.sh
-   more README
+Run the self-extracting installer to uncompress and install the package.
+The install script will install all the pre-requisites which are either
+included in the package or are retrieved via apt-get:
+   sudo bash pioscript_install
+
+After installation you should see two new folders on your desktop. One
+contains the Pibrella example scripts and one contains the scripts for
+non-Pibrella users. To run a script just double-click it. To view or
+change a script, right-click it and select the Leafpad editor.
 
 Usage
 =====
@@ -17,11 +19,11 @@ To run a script:
    pioscript <script_file>
 
 To get help including the list of valid script commands:
-   pioscript --help
+   pioscript -morehelp
 
 A test script is included that doesn't require any GPIO pins
 to be connected:
-   pioscript scripts/sound
+   pioscript scripts/sound.pioscript
 
 If you don't hear any sound try running:
    ./resetAudio.sh hdmi
@@ -31,19 +33,19 @@ and then try again.
 
 The following scripts are also included but view the script before
 you run it to see what GPIO connections are required:
-   pioscript scripts/sample
-   pioscript scripts/longpress
-   pioscript scripts/servo
-   pioscript scripts/photosensor
+   pioscript scripts/sample.pioscript
+   pioscript scripts/longpress.pioscript
+   pioscript scripts/servo.pioscript
+   pioscript scripts/photosensor.pioscript
 
 The Pibrella add-on board is fully supported. Try the following
 example scripts:
-   pioscript scripts/pibrella_example1
-   pioscript scripts/pibrella_example2
-   pioscript scripts/pibrella_longpress
-   pioscript scripts/pibrella_simon
-   pioscript scripts/pibrella_photosensor
-   pioscript scripts/pibrella_star_wars
+   pioscript pibrella_scripts/example1.pioscript
+   pioscript pibrella_scripts/example2.pioscript
+   pioscript pibrella_scripts/longpress.pioscript
+   pioscript pibrella_scripts/simon_game.pioscript
+   pioscript pibrella_scripts/photosensor.pioscript
+   pioscript pibrella_scripts/star_wars.pioscript
 
 Script Instructions
 ===================
@@ -87,10 +89,10 @@ the output_pwm command on a servo and leave it in the same position for long
 periods of time the servo may get warm. To protect your servo you should also
 use the stop_pwm command after a short delay.
 
-Important Note 2: If you are using the Pibrella add-on and use either the
-sound_buzzer, play_note or play_song commands you will no longer hear any sound
-samples play until you reboot your Pi. This is because the internal buzzer
-uses hardware PWM which interferes with the Pi's audio output.
+Important Note 2: The sound_buzzer, play_note and play_song commands all use
+hardware PWM so if you use any of these commands you may no longer hear any
+sound samples play until you reboot your Pi. This is because hardware PWM
+interferes with the Pi's analog audio output.
 
 Command List
 ============
@@ -125,7 +127,7 @@ General
                          Green, InputA, InputB, InputC, InputD, OutputE,
                          OutputF, OutputG, OutputH.
 
-Audio
+Sound
 -----
   play_sound mywavfile   Play a sound. Only 44.1 KHz 16-bit stereo WAV files
                          are supported.
@@ -145,12 +147,10 @@ Audio
   fadeout 2.5 mywavfile  Fade a sound out over the specified number of seconds.
   fadeout 5 *            Fade out all currently playing sounds over the
                          specified number of seconds.
-  sound_buzzer 2         Pibrella only. Sound the buzzer for the specified
-                         number of seconds.
-  play_note 60 .5        Pibrella only. Play the specified MIDI note for the
-                         specified number of seconds. Note 60 is middle C. The
-                         buzzer is limited to 3 octaves so note must be between
-                         48 and 84.
+  sound_buzzer 2         Sound the buzzer for the specified number of seconds.
+  play_note 60 .5        Play the specified MIDI note for the specified number
+                         of seconds. Note 60 is middle C. The buzzer is limited
+                         to 3 octaves so note must be between 48 and 84.
   play_note A#2 .5       You can use note names instead of MIDI note numbers.
                          Specify A to G or - for a rest optionally followed by
                          # (sharp) or b (flat) optionally followed by an octave
@@ -213,7 +213,7 @@ GPIO
                          seconds.
   stop_pwm 1             Stop PWM on output 1.
 
-VARIABLES
+Variables
 ---------
   set a = 1              Creates a variable a and assigns value 1 to it.
   set b = $a + 1         Creates a variable b and uses an expression to assign
@@ -226,12 +226,12 @@ VARIABLES
                          sequential.
   set a[$b+1] = 2        An expression can be used for the subscript.
 
-SPECIAL VARIABLES
+Special Variables
 -----------------
   print $input           The $input variable stores the last value read by the
                          read_input command.
 
-OPERATORS
+Operators
 ---------
   set a = ($b - 1) * $c  Any of the mathematical operators +, -, *, / may be
                          used in an expression.
@@ -243,7 +243,7 @@ OPERATORS
   set a = 3 + ($b >= $c) An expression can contain any mix of mathematical and
                          logical operators.
 
-FUNCTIONS
+Functions
 ---------
   sync()                 Returns the current value of the global timer.
   int($a)                Rounds $a down to its integer value.
@@ -258,8 +258,8 @@ FUNCTIONS
   released(0)            Returns true if the specified button is not currently
                          being pressed.
 
-CONDITIONALS
----------
+Conditionals
+------------
   if $winner             Only executes the commands between if and else/end_if
                          when the expression evaluates to true.
   else                   Only executes the commands between else and end_if when

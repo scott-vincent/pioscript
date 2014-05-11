@@ -23,6 +23,7 @@ Script::Script(char *filename)
 	strcpy(mFilename, filename);
 	mCurrentMethod = NULL;
 	mMain = NULL;
+	mUsesRecording = false;
 }
 
 /**
@@ -171,6 +172,18 @@ bool Script::load()
 		}
 	}
 
+	// Check for missing sounds
+	for (auto iter = mSounds.begin(); iter != mSounds.end(); iter++)
+	{
+		Audio *audio = iter->second;
+		if (audio->isMissing()){
+			fprintf(stderr, "Sound file not found: %s\n",
+					audio->getName());
+			fprintf(stderr, "at line %d\n", audio->getLineNum());
+			return false;
+		}
+	}
+
 	if (!orphanNestingCheck())
 		return false;
 
@@ -181,7 +194,7 @@ bool Script::load()
 /**
  *
  */
-bool Script::defineMethod(char *name, int lineNum)
+bool Script::defineMethod(const char *name, int lineNum)
 {
 	if (*name == '\0'){
 		fprintf(stderr, "Missing method name\n");
@@ -251,7 +264,7 @@ bool Script::orphanNestingCheck()
 /**
  * Find existing or create new if method does not already exist
  */
-Method* Script::addMethod(char *name, int lineNum)
+Method* Script::addMethod(const char *name, int lineNum)
 {
 	Method *method;
 	auto iter = mMethods.find(name);
@@ -269,12 +282,12 @@ Method* Script::addMethod(char *name, int lineNum)
 /**
  * Find existing or create new if sound does not already exist
  */
-Audio* Script::addAudio(char *name)
+Audio* Script::addAudio(const char *name, int lineNum)
 {
 	Audio *audio;
 	auto iter = mSounds.find(name);
 	if (iter == mSounds.end()){
-		audio = new Audio(name);
+		audio = new Audio(name, lineNum);
 		if (!audio->isValid())
 			return NULL;
 
@@ -460,9 +473,7 @@ bool Script::addCommand(char *name, char *params, int lineNum, char *lineStr)
 
 	// Add object if required
 	if (command->isMethod()){
-		char methodName[256];
-		command->nameParam.getFullStrValue(methodName);
-		command->object = addMethod(methodName, lineNum);
+		command->object = addMethod(command->nameParam.getStrValue().c_str(), lineNum);
 		if (!command->object)
 			return false;
 	}
@@ -472,11 +483,27 @@ bool Script::addCommand(char *name, char *params, int lineNum, char *lineStr)
 		if (command->isGlobal())
 			return true;
 
-		char wavName[256];
-		command->nameParam.getFullStrValue(wavName);
-		command->object = addAudio(wavName);
+		command->object = addAudio(command->nameParam.getStrValue().c_str(), lineNum);
 		if (!command->object)
 			return false;
+	}
+	else if (command->type == Command::Save_Recording){
+		Audio *audio = addAudio(command->nameParam.getStrValue().c_str(), lineNum);
+		if (!audio)
+			return false;
+
+		audio->notMissing();
+		command->object = audio;
+	}
+	else if (command->type == Command::Play_Recording
+			|| command->type == Command::Play_Recording_Wait)
+	{
+		Audio *audio = addAudio("{recorded_wav}", lineNum);
+		if (!audio)
+			return false;
+
+		audio->notMissing();
+		command->object = audio;
 	}
 	else if (command->isGpioSwitch()){
 		command->object = addGpio(command->param[0].getValue(), Gpio::SWITCH);
@@ -531,6 +558,9 @@ bool Script::addCommand(char *name, char *params, int lineNum, char *lineStr)
 			}
 		}
 	}
+
+	if (command->isRecording())
+		mUsesRecording = true;
 
 	if (command->type == Command::Set){
 		if (!addFuncObjects(command, 1))
@@ -635,6 +665,13 @@ void Script::report()
 		Audio *audio = iter->second;
 		printf("%s\n", audio->getName());
 	}
+
+	printf("\nRecording\n", mPins.size());
+	printf("---------\n");
+	if (mUsesRecording)
+		printf("Active - requires a USB microphone or USB webcam with built-in microphone\n");
+	else
+		printf("Not active\n");
 
 	printf("\nGPIO (%d)\n", mPins.size());
 	printf("----\n");

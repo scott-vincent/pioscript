@@ -183,6 +183,38 @@ bool Activity::exec(Command *command, double now)
 			else
 				return Audio::fadeoutAll(command->param[0].getValue());
 
+		case Command::Start_Recording:
+			if (!Engine::recorder->startStream())
+				return false;
+
+			mIter--;
+			mWaiting = true;
+			// Wait for 30ms before checking wait condition
+			mNextAdvance = now + 30;
+			return true;
+
+		case Command::Stop_Recording:
+			return Engine::recorder->stopStream();
+
+		case Command::Play_Recording:
+			audio = (Audio *)command->object;
+			return Engine::recorder->playWAV(audio);
+
+		case Command::Play_Recording_Wait:
+			audio = (Audio *)command->object;
+			if (!Engine::recorder->playWAV(audio))
+				return false;
+
+			mIter--;
+			mWaiting = true;
+			// Wait for 40ms before checking wait condition
+			mNextAdvance = now + 40;
+			return true;
+
+		case Command::Save_Recording:
+			audio = (Audio *)command->object;
+			return Engine::recorder->saveWAV(command->nameParam.getStrValue().c_str(), audio);
+
         case Command::Wait_Low:
 			gpio = (Gpio *)command->object;
 			if (gpio->isState(0))
@@ -607,6 +639,7 @@ bool Activity::wait(Command *command, double now)
 	switch (command->type){
 
         case Command::Play_Wait:
+        case Command::Play_Recording_Wait:
 			audio = (Audio *)command->object;
 			if (!audio->isPlaying())
 			{
@@ -615,6 +648,16 @@ bool Activity::wait(Command *command, double now)
 			}
 			// Check again in 40ms time
 			mNextAdvance = now + 40;
+			return true;
+
+		case Command::Start_Recording:
+			if (Engine::recorder->isStarted())
+			{
+				mWaiting = false;
+				return true;
+			}
+			// Check again in 30ms time
+			mNextAdvance = now + 30;
 			return true;
 
         case Command::Wait_Low:

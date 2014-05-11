@@ -32,6 +32,15 @@ public:
 		Stop_Sound,
 		Volume,
 		FadeOut,
+		Record_Sound,
+		Start_Recording,
+		Stop_Recording,
+		Start_Recording_Wait,
+		Start_Listening_Wait,
+		Recording_Level,
+		Play_Recording,
+		Play_Recording_Wait,
+		Save_Recording,
 		Use_Addon,
 		Play_Note,
 		Loop_Note,
@@ -100,29 +109,19 @@ public:
 	bool validateParams(char *params);
 	bool isMethod();
 	bool isAudio();
+	bool isRecording();
 	bool isGpio();
 	bool isGpioSwitch();
 	bool isGpioInput();
 	bool isGpioOutput();
 	bool isGpioPwm();
-	bool isGpioLinear() { return (type == Linear_Pwm
-							|| type == Linear_Pwm_Wait
-							|| type == Linear_Pwm_Loop); };
-	bool isGpioSine() { return (type == Sine_Pwm
-							|| type == Sine_Pwm_Wait
-							|| type == Sine_Pwm_Loop); };
-	bool isGpioLoop() { return (type == Random_Pwm_Loop
-							|| type == Linear_Pwm_Loop
-							|| type == Sine_Pwm_Loop); };
-	bool isGpioWait() { return (type == Linear_Pwm_Wait
-							|| type == Sine_Pwm_Wait); };
+	bool isGpioLinear();
+	bool isGpioSine();
+	bool isGpioLoop();
+	bool isGpioWait();
+	bool isStartNest();
+	bool isEndNest();
 	bool isGlobal() { return (nameParam.getStrValue() == "*"); };
-	bool isStartNest() { return (type == If
-							|| type == While
-							|| type == For); };
-	bool isEndNest() { return (type == Else || type == End_If
-							|| type == End_While
-							|| type == End_For); };
 	char *addPinParam(int num, char *params);
 	char *addNoteParam(int num, char *params, bool isSong);
 	char *addNoteLen(int num, char *params, int speed);
@@ -131,7 +130,8 @@ public:
 	bool validParam(int num);
 	bool validPwmParams();
 	char *paramToStr(int num);
-	static void report();
+	static void reportAdvanced();
+	static void reportPibrella();
 
 private:
 	char *addParam(int num, char *params);

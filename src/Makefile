@@ -10,11 +10,11 @@ OBJS = $(SRC:%.cpp=$(OBJDIR)/%.o)
 SDL_CFLAGS = $(shell sdl-config --cflags)
 SDL_LFLAGS = $(shell sdl-config --libs)
 
-WIRINGPI_CFLAGS = -I/usr/local/include
-WIRINGPI_LFLAGS = -L/usr/local/lib -lwiringPi
+OTHER_CFLAGS = -I/usr/local/include
+OTHER_LFLAGS = -L/usr/local/lib -lwiringPi -lSDL_mixer -lportaudio
 
-CFLAGS = $(NODEBUG) $(SDL_CFLAGS) $(WIRINGPI_CFLAGS) -std=c++0x -pthread
-LFLAGS = $(SDL_LFLAGS) $(WIRINGPI_LFLAGS) -lSDL_mixer
+CFLAGS = $(NODEBUG) $(SDL_CFLAGS) $(OTHER_CFLAGS) -std=c++0x -pthread
+LFLAGS = $(SDL_LFLAGS) $(OTHER_LFLAGS)
 
 .PHONY: all
 all: $(EXE)
@@ -24,6 +24,7 @@ $(EXE) : $(OBJDIR) $(OBJS)
 	@echo "  Linking "$@
 	@echo "------------------------"
 	$(CC) -o $@ $(OBJS) $(CFLAGS) $(LFLAGS)
+	@chmod 4755 /usr/local/bin/pioscript
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR)

@@ -18,6 +18,7 @@
 #ifndef __AUDIO_H__
 #define __AUDIO_H__
 
+#include <list>
 #include <SDL/SDL.h>
 #include <SDL/SDL_mixer.h>
 
@@ -25,26 +26,36 @@
 class Audio {
 
 public:
-	static const int MAX_SOUNDS = 64;
+	static const int MAX_SOUNDS = 32;
 	static const int MAX_VOLUME = 10;
 	static bool mInit;
+	static bool mUsingAudio;
 	static int mUniqueChannel;
 
 private:
 	char mWavfile[256];
+	int mLineNum;
+	bool mMissing;
 	Mix_Chunk *mSound;
 	int mChannel;
 	int mVolume;
 	Mix_Chunk mSaved;
+	//void *mSavedData;
 
 public:
 	static bool init();
 	static void cleanup();
+	static void disable();
+	static void enable();
 
-	Audio(const char *wavfile);
+	Audio(const char *wavfile, int lineNum);
 	~Audio();
 	char *getName() { return mWavfile; };
+	int getLineNum() { return mLineNum; };
 	bool isValid() { return (mChannel != -1); };
+	bool isMissing() { return mMissing; };
+	void notMissing() { mMissing = false; };
+	bool replaceWAV(void *data, int dataSize);
 	bool play(int loops);
 	bool isPlaying();
 	bool pause();

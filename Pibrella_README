@@ -1,0 +1,99 @@
+
+Pioscript v2.1    Scott Vincent    May 2014    email: scottvincent@yahoo.com
+
+Command List
+============
+
+General
+-------
+  use_addon pibrella     Tell pioscript you are using a Pibrella. You can then
+                         use the following names for inputs and outputs :-
+     Pibrella Inputs: Button, InputA, InputB, InputC, InputD.
+     Pibrella Outputs: Red, Amber, Green, OutputE, OutputF, OutputG, OutputH.
+  #Comment               This is a comment.
+  :main                  The main activity runs when the script starts.
+  wait 1.5               Wait for 1.5 seconds.
+  repeat                 Repeat an activity.
+  print My text          Print some text.
+  print Value is $myvar  Print a variable.
+  exit                   Stop all activities and quit.
+  :My Activity           Define an activity.
+  start My Activity      Start an activity.
+  start_wait My Activity Start an activity and wait for it to complete.
+  stop My Activity       Stop an activity.
+
+Pibrella Buzzer
+---------------
+  sound_buzzer 0.5       Sound the buzzer for 0.5 seconds.
+  play_note C 1          Play note C for 1 second.
+  play_note A#2 .5       Play note A# in octave 2 for 0.5 seconds.
+  play_song 1 A#2,.5 C,.25 G -,2 Db0,4 etc.
+                         Play a sequence of notes at speed 1. Use - for a rest.
+
+Sound
+-----
+  play_sound mywavfile   Play a sound.
+  play_loop mywavfile    Play in a continuous loop.
+  play_wait mywavfile    Play a sound and wait for it to complete.
+  stop_sound mywavfile   Stop playing a sound.
+  stop_sound *           Stop all sounds.
+
+Input/Output
+------------
+  wait_press Button      Wait for Button to be pressed.
+  wait_release Button    Wait for Button to be released.
+  turn_on Red            Turn on the Red LED.
+  turn_off Red           Turn off the Red LED.
+  flash Amber 1.5        Flash the Amber LED every 1.5 seconds.
+  turn_off Amber         Turn off the Amber LED.
+  set_power OutputE 50   Set the motor speed to 50%.
+  turn_off OutputE       Turn off the motor.
+  set_brightness Red 50  Set the Red LED brightness to 50%.
+  read_input InputA OutputE
+                         Read a photo-resistor on InputA and OutputE.
+  print $input           Show the value read from the photo-resistor.
+
+Variables
+---------
+  set $val = 1           Set a variable to a value.
+  set $val = $val + 1    Add 1 to a variable.
+  set $val[1] = 2        Create a set of variables.
+  set $val[2] = 5
+
+Operators
+---------
+  set $val = 1 + 2 * 3 / 4
+                         Use the mathematical operators +, -, *, /.
+  set $val = ($score > $high_score) AND NOT $lost
+                         Use the logical operators =, <, >, !=, <=, >=, AND, OR.
+  set $finished = TRUE   You can also use TRUE and FALSE instead of 1 and 0.
+
+Functions
+---------
+  int($val)              Rounds $val down to the nearest value.
+  trunc($val)            Same as int function.
+  round($val)            Rounds $val up or down to the nearest value.
+  rand()                 Returns a random number in the range 0 to 0.999.
+  set $val = 1 + int(5 * rand())
+                         Sets $val to a random value between 1 and 5.
+  pressed(Button)        Returns TRUE if Button is currently being pressed.
+  released(Button)       Returns TRUE if Button is not currently being pressed.
+
+Branching
+---------
+  if $val = 1            Only do the following commands if expression is TRUE.
+  else                   Only do the following commands if expression is FALSE.
+  end_if                 Marks the end of an if block.
+  while $val < 10        Keep doing the following commands until the expression
+                         is FALSE.
+  end_while              Marks the end of a while block.
+  for ($a = 0) ($a < 10) ($a = $a + 1)
+                         Set $a to 0 and do the following commands. Then add 1
+                         to $a and do the commands again. Keep repeating until
+                         the expression is FALSE.
+  end_for                Marks the end of a for block.
+========================================
+
+Please note that if you use any of the Pibrella Buzzer commands you will not
+hear any sounds from the Sound commmands until you reboot the Pi.
+
