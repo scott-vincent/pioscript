@@ -4,8 +4,8 @@ Pioscript v2.1    Scott Vincent    May 2014    email: scottvincent@yahoo.com
 Installation
 ============
 Run the self-extracting installer to uncompress and install the package.
-The install script will install all the pre-requisites which are either
-included in the package or are retrieved via apt-get:
+The install script will install all the pre-requisites which are all
+included in the package so no internet connection is required:
    sudo bash pioscript_install
 
 After installation you should see two new folders on your desktop. One
