@@ -128,13 +128,14 @@ General
 
 Sound
 -----
-  play_sound mywavfile   Play a sound. Only 44.1 KHz 16-bit stereo WAV files
-                         are supported.
-  play_loop mywavfile    Play in a continuous loop.
-  play_wait mywavfile    Play a sound and wait for it to complete.
-  play_from 4.5 mywavfile
-                         Play a sound from the specified number of seconds
-                         after the start.
+  play_sound mywavfile   Play a sound and wait for it to complete. Only
+                         44.1 KHz 16-bit stereo WAV files are supported.
+  start_sound mywavfile  Start playing a sound.
+  start_sound_loop mywavfile
+                         Start playing a sound in a continuous loop.
+  start_sound_from 4.5 mywavfile
+                         Start playing a sound from the specified number of
+                         seconds after the start.
   pause mywavfile        Pause a sound.
   pause *                Pause all currently playing sounds.
   resume mywavfile       Resume playing a sound.
@@ -251,6 +252,8 @@ Functions
   rand()                 Returns a random number in the range 0 to 0.999.
   set a = 1 + int(10 * rand())
                          Sets $a to a random integer between 1 and 10.
+  playing(mywavfile)     Returns true if the sound is currently playing.
+  recording()            Returns true if a recording is currently in progress.
   pressed(0)             Returns true if the specified button is currently
                          being pressed. You must specify an actual pin number
                          or Pibrella input name, not a variable or expression.

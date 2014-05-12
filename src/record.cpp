@@ -352,7 +352,7 @@ bool Record::saveWAV(const char *filename, Audio *audio)
 /*
  *
  */
-bool Record::playWAV(Audio *audio)
+bool Record::playWAV(Audio *audio, double now)
 {
 	if (!mInit){
 		fprintf(stderr, "PortAudio not initialised\n");
@@ -377,7 +377,7 @@ bool Record::playWAV(Audio *audio)
 	if (!audio->replaceWAV(mRecordData.samples, dataSize))
 		return false;
 
-	return audio->play(0);
+	return audio->play(0, now);
 }
 
 

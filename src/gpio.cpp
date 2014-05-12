@@ -183,10 +183,12 @@ bool Gpio::startServoBlaster()
 	if (mServoBlasterPid != -1)
 		stopServoBlaster();
 
-	printf("Starting ServoBlaster (%s)\n", SB_COMMAND);
+	if (Engine::displayOn)
+		printf("Starting ServoBlaster (%s)\n", SB_COMMAND);
+
 	mServoBlasterPid = fork();
 	if (mServoBlasterPid == -1){
-		fprintf(stderr, "** Failed to create child process\n");
+		fprintf(stderr, "** Failed to create ServoBlaster process\n");
 		return false;
 	}
 

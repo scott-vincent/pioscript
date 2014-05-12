@@ -45,7 +45,7 @@ private:
 	Method* addMethod(const char *name, int lineNum);
 	Audio* addAudio(const char *name, int lineNum);
 	Gpio* addGpio(int pin, Gpio::Type type);
-	bool addFuncObjects(Command *command, int paramNum);
+	bool addFuncObjects(Command *command, int paramNum, int lineNum);
 	bool addCommand(char *name, char *params, int lineNum, char *lineStr);
 };
 

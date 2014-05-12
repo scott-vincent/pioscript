@@ -57,7 +57,7 @@ public:
 	bool isStarted() { return (mRecordData.frameIndex > 0); };
 	bool isActive() { Pa_IsStreamActive(mStream); };
 	bool saveWAV(const char *filename, Audio *audio);
-	bool playWAV(Audio *audio);
+	bool playWAV(Audio *audio, double now);
 };
 
 #endif

@@ -24,9 +24,9 @@ class Command {
 public:
 	enum Type {
 		Play_Sound,
-		Play_Loop,
-		Play_Wait,
-		Play_From,
+		Start_Sound,
+		Start_Sound_Loop,
+		Start_Sound_From,
 		Pause,
 		Resume,
 		Stop_Sound,
@@ -39,7 +39,6 @@ public:
 		Start_Listening_Wait,
 		Recording_Level,
 		Play_Recording,
-		Play_Recording_Wait,
 		Save_Recording,
 		Use_Addon,
 		Play_Note,

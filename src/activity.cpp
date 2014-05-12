@@ -118,15 +118,7 @@ bool Activity::exec(Command *command, double now)
 
         case Command::Play_Sound:
 			audio = (Audio *)command->object;
-			return audio->play(0);
-
-        case Command::Play_Loop:
-			audio = (Audio *)command->object;
-			return audio->play(-1);
-
-        case Command::Play_Wait:
-			audio = (Audio *)command->object;
-			if (!audio->play(0))
+			if (!audio->play(0, now))
 				return false;
 
 			mIter--;
@@ -135,7 +127,15 @@ bool Activity::exec(Command *command, double now)
 			mNextAdvance = now + 40;
 			return true;
 
-        case Command::Play_From:
+        case Command::Start_Sound:
+			audio = (Audio *)command->object;
+			return audio->play(0, now);
+
+        case Command::Start_Sound_Loop:
+			audio = (Audio *)command->object;
+			return audio->play(-1, now);
+
+        case Command::Start_Sound_From:
 			if (!command->setParamValues(1))
 				return false;
 
@@ -198,11 +198,7 @@ bool Activity::exec(Command *command, double now)
 
 		case Command::Play_Recording:
 			audio = (Audio *)command->object;
-			return Engine::recorder->playWAV(audio);
-
-		case Command::Play_Recording_Wait:
-			audio = (Audio *)command->object;
-			if (!Engine::recorder->playWAV(audio))
+			if (!Engine::recorder->playWAV(audio, now))
 				return false;
 
 			mIter--;
@@ -638,10 +634,10 @@ bool Activity::wait(Command *command, double now)
 
 	switch (command->type){
 
-        case Command::Play_Wait:
-        case Command::Play_Recording_Wait:
+        case Command::Play_Sound:
+        case Command::Play_Recording:
 			audio = (Audio *)command->object;
-			if (!audio->isPlaying())
+			if (!audio->isPlaying(now))
 			{
 				mWaiting = false;
 				return true;

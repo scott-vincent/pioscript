@@ -13,6 +13,8 @@
 bool Audio::mInit = false;
 bool Audio::mUsingAudio = false;
 int Audio::mUniqueChannel = 0;
+bool Audio::mHWFail = false;
+bool Audio::mAllPaused = false;
 
 
 /**
@@ -27,7 +29,7 @@ bool Audio::init()
 		fprintf(stderr, "Unable to initialise SDL: %s\n", SDL_GetError());
 		return false;
 	}
- 
+
 	int audio_rate = 44100;
 	Uint16 audio_format = AUDIO_S16SYS;
 	int audio_channels = 2;
@@ -52,8 +54,10 @@ bool Audio::init()
 void Audio::cleanup()
 {
 	if (mInit){
-		Mix_CloseAudio();
-		SDL_Quit();
+		if (!mHWFail){
+			Mix_CloseAudio();
+			SDL_Quit();
+		}
 		mInit = false;
 	}
 }
@@ -113,10 +117,9 @@ Audio::Audio(const char *wavfile, int lineNum)
 		// May get replaced by a recorded sample so just
 		// create silence for now.
 		mMissing = true;
-		char silence[4];
-		for (int i = 0; i < 4; i++){
-			silence[i] = 0;
-		}
+		short silence[2];
+		silence[0] = 0;
+		silence[1] = 0;
 		mSound = Mix_QuickLoad_RAW((Uint8*)silence, 4);
 	}
 
@@ -132,6 +135,8 @@ Audio::Audio(const char *wavfile, int lineNum)
 	// Save the buffer pointer in case we re-position it
 	mSaved.abuf = mSound->abuf;
 	mSaved.alen = mSound->alen;
+	mMilliLen = (mSaved.alen * 10) / (441 * 4);
+	mStartTime = 0;
 }
 
 
@@ -162,8 +167,14 @@ bool Audio::replaceWAV(void *data, int dataSize)
 		return false;
 	}
 
+	if (Mix_Playing(mChannel) != 0)
+		Mix_HaltChannel(mChannel);
+
 	Mix_FreeChunk(mSound);
 	mSound = Mix_QuickLoad_RAW((Uint8*)data, dataSize);
+	mSaved.abuf = mSound->abuf;
+	mSaved.alen = mSound->alen;
+	mMilliLen = (mSaved.alen * 10) / (441 * 4);
 	return true;
 }
 
@@ -171,7 +182,7 @@ bool Audio::replaceWAV(void *data, int dataSize)
 /**
  * loops = 0 to play sound once, -1 to loop indefinitely
  */
-bool Audio::play(int loops)
+bool Audio::play(int loops, double now)
 {
 	if (!mInit){
 		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
@@ -183,12 +194,24 @@ bool Audio::play(int loops)
 		return false;
 	}
 
+	if (mHWFail){
+		fprintf(stderr, "Failed to play sound %s\n", mWavfile);
+		fprintf(stderr, "Error: Reboot required\n");
+		return false;
+	}
+
+	if (Mix_Playing(mChannel) != 0)
+		Mix_HaltChannel(mChannel);
+
 	int channel = Mix_PlayChannel(mChannel, mSound, loops);
 	if (channel == -1) {
 		fprintf(stderr, "Failed to play sound %s\n", mWavfile);
 		fprintf(stderr, "Error: %s\n", Mix_GetError());
 		return false;
 	}
+
+	if (loops == 0)
+		mStartTime = now;
 
 	return true;
 }
@@ -197,14 +220,42 @@ bool Audio::play(int loops)
 /**
  *
  */
-bool Audio::isPlaying()
+bool Audio::isPlaying(double now)
 {
+	static bool msgDisplayed = false;
+
 	if (!mInit){
 		fprintf(stderr, "Cannot play sound when a recording is in progres\n");
 		return false;
 	}
 
-	return (Mix_Playing(mChannel) != 0);
+	bool playing = (Mix_Playing(mChannel) != 0);
+
+	// Detect sound failure due to hardware PWM. When this happens
+	// the sound thinks it is playing forever and never completes.
+	if (playing && mStartTime > 0 && !mAllPaused){
+		// If actual wait is at least 10 seconds more than expected
+		// the sound has failed to stop.
+		if ((now - mStartTime) > (mMilliLen + 10000)){
+			if (!msgDisplayed){
+				fprintf(stderr, "===============================================================================\n");
+				fprintf(stderr, "  WARNING: Cannot play sound through the audio jack until the Pi is rebooted.\n");
+				fprintf(stderr, "  This is because you have used either the sound_buzzer, play_note or play_song\n");
+				fprintf(stderr, "  commands which interfere with analog audio. To avoid this problem in the\n");
+				fprintf(stderr, "  future please use HDMI audio instead.\n");
+				fprintf(stderr, "===============================================================================\n");
+				fprintf(stderr, "ERROR: Reboot required\n");
+				msgDisplayed = true;
+			}
+			mHWFail = true;
+			playing = false;
+		}
+	}
+	else {
+		mStartTime = 0;
+	}
+
+	return playing;
 }
 
 
@@ -224,6 +275,7 @@ bool Audio::pause()
 	}
 
 	Mix_Pause(mChannel);
+	mStartTime = 0;
 	return true;
 }
 
@@ -343,6 +395,7 @@ bool Audio::playFrom(int millis)
 		fprintf(stderr, "Error: %s\n", Mix_GetError());
 		return false;
 	}
+	mStartTime = 0;
 }
 
 
@@ -357,6 +410,7 @@ bool Audio::pauseAll()
 	}
 
 	Mix_Pause(-1);
+	mAllPaused = true;
 	return true;
 }
 

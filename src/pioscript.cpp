@@ -72,10 +72,10 @@ bool Pioscript::run(char *scriptfile)
 	printf("  Executing script %s\n", scriptfile);
 	printf("---------------------------------------\n");
 
-	Engine engine;
 	if (Gpio::usingPibrella())
-		engine.displayOff();
+		Engine::displayOn = false;
 
+	Engine engine;
 	if (!engine.execute(script.getMain(), script.usesRecording())){
 		fprintf(stderr, "** Failed to execute script\n");
 		cleanup();

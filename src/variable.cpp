@@ -566,6 +566,20 @@ const char *Variable::getToken(const char *pos, void **funcObjects, bool expecti
 			}
 			value = ((funcVal + 500) / 1000) * 1000;
 		}
+		else if (strcasecmp(func, "playing") == 0){
+			int num = atoi(funcExpression);
+			Audio *audio = (Audio *)funcObjects[num];
+			if (audio->isPlaying(Engine::timeNow()))
+				value = 1000;
+			else
+				value = 0;
+		}
+		else if (strcasecmp(func, "recording") == 0){
+			if (Engine::recorder->isActive())
+				value = 1000;
+			else
+				value = 0;
+		}
 		else if (strcasecmp(func, "pressed") == 0){
 			int num = atoi(funcExpression);
 			Gpio *gpio = (Gpio *)funcObjects[num];

@@ -39,14 +39,12 @@ Command::Command(char *name, int _lineNum, char *_lineStr)
 
 	if (strcasecmp(name, "play_sound") == 0)
 		type = Play_Sound;
-	else if (strcasecmp(name, "play_loop") == 0)
-		type = Play_Loop;
-	else if (strcasecmp(name, "play_wait") == 0)
-		type = Play_Wait;
-	else if (strcasecmp(name, "play_sound_wait") == 0)
-		type = Play_Wait;
-	else if (strcasecmp(name, "play_from") == 0)
-		type = Play_From;
+	else if (strcasecmp(name, "start_sound") == 0)
+		type = Start_Sound;
+	else if (strcasecmp(name, "start_sound_loop") == 0)
+		type = Start_Sound_Loop;
+	else if (strcasecmp(name, "start_sound_from") == 0)
+		type = Start_Sound_From;
 	else if (strcasecmp(name, "pause") == 0)
 		type = Pause;
 	else if (strcasecmp(name, "resume") == 0)
@@ -73,8 +71,6 @@ Command::Command(char *name, int _lineNum, char *_lineStr)
 		type = Stop_Recording;
 	else if (strcasecmp(name, "play_recording") == 0)
 		type = Play_Recording;
-	else if (strcasecmp(name, "play_recording_wait") == 0)
-		type = Play_Recording_Wait;
 	else if (strcasecmp(name, "save_recording") == 0)
 		type = Save_Recording;
 	else if (strcasecmp(name, "use_addon") == 0)
@@ -199,9 +195,10 @@ bool Command::isMethod()
  */
 bool Command::isAudio()
 {
-	return (type == Play_Sound || type == Play_Loop || type == Play_Wait
-		|| type == Play_From || type == Pause || type == Resume
-		|| type == Stop_Sound || type == Volume || type == FadeOut);
+	return (type == Play_Sound || type == Start_Sound
+		|| type == Start_Sound_Loop	|| type == Start_Sound_From
+		|| type == Pause || type == Resume || type == Stop_Sound
+		|| type == Volume || type == FadeOut);
 }
 
 
@@ -213,8 +210,7 @@ bool Command::isRecording()
 	return (type == Record_Sound || type == Start_Recording
 		|| type == Stop_Recording || type == Start_Recording_Wait
 		|| type == Start_Listening_Wait || type == Recording_Level
-		|| type == Play_Recording || type == Play_Recording_Wait
-		|| type == Save_Recording);
+		|| type == Play_Recording || type == Save_Recording);
 }
 
 
@@ -522,7 +518,7 @@ bool Command::validateParams(char *params)
 
 			break;
 		
-		case Play_From:
+		case Start_Sound_From:
 		case Volume:
 		case FadeOut:
 			// Expect 1 number and 1 string
@@ -535,8 +531,8 @@ bool Command::validateParams(char *params)
 			break;
 
 		case Play_Sound:
-		case Play_Loop:
-		case Play_Wait:
+		case Start_Sound:
+		case Start_Sound_Loop:
 		case Pause:
 		case Resume:
 		case Stop_Sound:
@@ -578,7 +574,6 @@ bool Command::validateParams(char *params)
 		case Start_Recording:
 		case Stop_Recording:
 		case Play_Recording:
-		case Play_Recording_Wait:
 		case Repeat:
 		case Start_Sync:
 		case Else:
@@ -1484,7 +1479,7 @@ bool Command::validParam(int num)
 				}
 				break;
 
-			case Play_From:
+			case Start_Sound_From:
 			case FadeOut:
 				switch (num){
 					case 0: allowDecimal = true; break;
@@ -1778,13 +1773,14 @@ void Command::reportAdvanced()
 	printf("\n");
 	printf("Sound\n");
 	printf("-----\n");
-	printf("  play_sound mywavfile   Play a sound. Only 44.1 KHz 16-bit stereo WAV files\n");
-	printf("                         are supported.\n");
-	printf("  play_loop mywavfile    Play in a continuous loop.\n");
-	printf("  play_wait mywavfile    Play a sound and wait for it to complete.\n");
-	printf("  play_from 4.5 mywavfile\n");
-	printf("                         Play a sound from the specified number of seconds\n");
-	printf("                         after the start.\n");
+	printf("  play_sound mywavfile   Play a sound and wait for it to complete. Only\n");
+	printf("                         44.1 KHz 16-bit stereo WAV files are supported.\n");
+	printf("  start_sound mywavfile  Start playing a sound.\n");
+	printf("  start_sound_loop mywavfile\n");
+	printf("                         Start playing a sound in a continuous loop.\n");
+	printf("  start_sound_from 4.5 mywavfile\n");
+	printf("                         Start playing a sound from the specified number of\n");
+	printf("                         seconds after the start.\n");
 	printf("  pause mywavfile        Pause a sound.\n");
 	printf("  pause *                Pause all currently playing sounds.\n");
 	printf("  resume mywavfile       Resume playing a sound.\n");
@@ -1901,6 +1897,8 @@ void Command::reportAdvanced()
 	printf("  rand()                 Returns a random number in the range 0 to 0.999.\n");
 	printf("  set a = 1 + int(10 * rand())\n");
 	printf("                         Sets $a to a random integer between 1 and 10.\n");
+	printf("  playing(mywavfile)     Returns true if the sound is currently playing.\n");
+	printf("  recording()            Returns true if a recording is currently in progress.\n");
 	printf("  pressed(0)             Returns true if the specified button is currently\n");
 	printf("                         being pressed. You must specify an actual pin number\n");
 	printf("                         or Pibrella input name, not a variable or expression.\n");
@@ -1977,9 +1975,10 @@ void Command::reportPibrella()
 	printf("\n");
 	printf("Sound\n");
 	printf("-----\n");
-	printf("  play_sound mywavfile   Play a sound.\n");
-	printf("  play_loop mywavfile    Play in a continuous loop.\n");
-	printf("  play_wait mywavfile    Play a sound and wait for it to complete.\n");
+	printf("  play_sound mywavfile   Play a sound and wait for it to complete.\n");
+	printf("  start_sound mywavfile  Start playing a sound.\n");
+	printf("  start_sound_loop mywavfile\n");
+	printf("                         Start playing a sound in a continuous loop.\n");
 	printf("  stop_sound mywavfile   Stop playing a sound.\n");
 	printf("  stop_sound *           Stop all sounds.\n");
 	printf("\n");
@@ -2021,6 +2020,8 @@ void Command::reportPibrella()
 	printf("  rand()                 Returns a random number in the range 0 to 0.999.\n");
 	printf("  set $val = 1 + int(5 * rand())\n");
 	printf("                         Sets $val to a random value between 1 and 5.\n");
+	printf("  playing(mywavfile)     Returns TRUE if the sound is currently playing.\n");
+	printf("  recording()            Returns TRUE if a recording is currently in progress.\n");
 	printf("  pressed(Button)        Returns TRUE if Button is currently being pressed.\n");
 	printf("  released(Button)       Returns TRUE if Button is not currently being pressed.\n");
 	printf("\n");

@@ -31,6 +31,8 @@ public:
 	static bool mInit;
 	static bool mUsingAudio;
 	static int mUniqueChannel;
+	static bool mHWFail;
+	static bool mAllPaused;
 
 private:
 	char mWavfile[256];
@@ -40,7 +42,8 @@ private:
 	int mChannel;
 	int mVolume;
 	Mix_Chunk mSaved;
-	//void *mSavedData;
+	int mMilliLen;
+	double mStartTime;
 
 public:
 	static bool init();
@@ -56,8 +59,8 @@ public:
 	bool isMissing() { return mMissing; };
 	void notMissing() { mMissing = false; };
 	bool replaceWAV(void *data, int dataSize);
-	bool play(int loops);
-	bool isPlaying();
+	bool play(int loops, double now);
+	bool isPlaying(double now);
 	bool pause();
 	bool resume();
 	bool halt();

@@ -344,61 +344,101 @@ Gpio* Script::addGpio(int pin, Gpio::Type type)
 
 /**
  * If an expression contains any 'pressed' or 'released'
- * functions we need to add the gpio switches. The function
- * param is replaced by the command's funcObject number.
+ * functions we need to add the gpio switches and if it
+ * contains any 'playing' functions we need to add the
+ * audio object. The function param is replaced by the
+ * command's funcObject number.
  */
-bool Script::addFuncObjects(Command *command, int paramNum)
+bool Script::addFuncObjects(Command *command, int paramNum, int lineNum)
 {
+	char oldStr[512];
+	const char *src = oldStr;
 	char newStr[512];
 	char *dest = newStr;
-	const char *src;
+
+	const char *orig;
 	if (paramNum == -1)
-		src = command->nameParam.getStrValue().c_str();
+		orig = command->nameParam.getStrValue().c_str();
 	else
-		src = command->param[paramNum].getStrValue().c_str();
+		orig = command->param[paramNum].getStrValue().c_str();
+
+	// Convert to lower case
+	char *lwr = oldStr;
+	while (*orig != '\0'){
+		*lwr++ = tolower(*orig++);
+	}
+	*lwr = '\0';
+
+	if (strstr(src, "recording("))
+		mUsesRecording = true;
 
 	while (true){
+		bool isAudio = false;
 		const char *func = strstr(src, "pressed(");
-		const char *startParam;
-		if (func)
-			startParam = func + 8;
-		else {
-			func = strstr(src, "released(");
-			if (func)
-				startParam = func + 9;
-			else
-				break;
+		int funcLen = 8;
+		const char *nextFunc = strstr(src, "released(");
+		if (nextFunc && (!func || nextFunc < func)){
+			func = nextFunc;
+			funcLen = 9;
+		}
+		nextFunc = strstr(src, "playing(");
+		if (nextFunc && (!func || nextFunc < func)){
+			func = nextFunc;
+			funcLen = 8;
+			isAudio = true;
 		}
 
+		if (!func)
+			break;
+
+		const char *startParam = func + funcLen;
 		const char *endParam = strchr(startParam, ')');
 		if (!endParam){
 			fprintf(stderr, "Function has missing ')' while evaluating %s\n", func);
 			return false;
 		}
 
+		while (*startParam == ' ')
+			startParam++;
+
 		char param[256];
 		int len = endParam - startParam;
 		strncpy(param, startParam, len);
 		param[len] = '\0';
 
-		// Use param 8 temporarily to parse the value and add the gpio switch
-		if (!command->addPinParam(8, param)){
-			fprintf(stderr, "while evaluating function %s\n", func);
-			return false;
-		}
+		if (isAudio){
+			// Parse the value
+			if (*param == '\0'){
+				fprintf(stderr, "Expected a parameter\n");
+				fprintf(stderr, "while evaluating function %s\n", func);
+				return false;
+			}
 
-		// Add the Gpio switch
-		int pin = command->param[8].getValue();
-		command->object = addGpio(pin, Gpio::SWITCH);
-		if (!command->object)
-			return false;
-		
+			// Add the audio object
+			command->object = addAudio(param, lineNum);
+			if (!command->object)
+				return false;
+		}
+		else {
+			// Use param 8 temporarily to parse the value
+			if (!command->addPinParam(8, param)){
+				fprintf(stderr, "while evaluating function %s\n", func);
+				return false;
+			}
+
+			// Add the Gpio switch
+			int pin = command->param[8].getValue();
+			command->object = addGpio(pin, Gpio::SWITCH);
+			if (!command->object)
+				return false;
+		}
+	
 		if (command->nextFuncObject > 8){
-			fprintf(stderr, "Expression contains too many Pressed/Released functions (Max is 9)\n");
+			fprintf(stderr, "Expression contains too many Playing/Pressed/Released functions (Max is 9)\n");
 			return false;
 		}
 
-		// Replace pin name/number with funcObject number
+		// Replace name/number with funcObject number
 		command->funcObject[command->nextFuncObject] = command->object;
 		len = startParam - src;
 		strncpy(dest, src, len);
@@ -495,8 +535,7 @@ bool Script::addCommand(char *name, char *params, int lineNum, char *lineStr)
 		audio->notMissing();
 		command->object = audio;
 	}
-	else if (command->type == Command::Play_Recording
-			|| command->type == Command::Play_Recording_Wait)
+	else if (command->type == Command::Play_Recording)
 	{
 		Audio *audio = addAudio("{recorded_wav}", lineNum);
 		if (!audio)
@@ -563,7 +602,7 @@ bool Script::addCommand(char *name, char *params, int lineNum, char *lineStr)
 		mUsesRecording = true;
 
 	if (command->type == Command::Set){
-		if (!addFuncObjects(command, 1))
+		if (!addFuncObjects(command, 1, lineNum))
 			return false;
 	}
 
@@ -571,14 +610,14 @@ bool Script::addCommand(char *name, char *params, int lineNum, char *lineStr)
 	if (command->isStartNest()){
 		command->nestEndLine = -1;
 		nestedCommands.push_back(command);
-		if (!addFuncObjects(command, -1))
+		if (!addFuncObjects(command, -1, lineNum))
 			return false;
 
 		if (command->type == Command::For){
-			if (!addFuncObjects(command, 1))
+			if (!addFuncObjects(command, 1, lineNum))
 				return false;
 
-			if (!addFuncObjects(command, 3))
+			if (!addFuncObjects(command, 3, lineNum))
 				return false;
 		}
 	}

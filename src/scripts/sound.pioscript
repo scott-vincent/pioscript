@@ -16,10 +16,10 @@ start Left
 start_wait Right
 
 :Left
-play_wait sounds/left.wav
+play_sound sounds/left.wav
 
 :Right
-play_wait sounds/right.wav
+play_sound sounds/right.wav
 
 :Centre
-play_wait sounds/centre.wav
+play_sound sounds/centre.wav

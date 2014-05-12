@@ -40,7 +40,6 @@ public:
 
 	Engine();
 	~Engine();
-	void displayOff() { displayOn = false; };
 	bool execute(Method *main, bool usesRecording);
 	static void sleep(int millisecs);
 	static double timeNow();
