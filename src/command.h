@@ -47,7 +47,8 @@ public:
 		Play_Song,
 		Sound_Buzzer,
 		Wait_Press,
-		Wait_Release,
+		Wait_Pressed,
+		Wait_Released,
 		Wait_High,
 		Wait_Low,
 		Read_Input,
@@ -98,6 +99,7 @@ public:
 	bool inFor;
 	int nextFuncObject;
 	void *funcObject[9];
+	bool waitRelease;
 
 private:
 	bool mIsValid;

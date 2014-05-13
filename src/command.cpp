@@ -87,8 +87,10 @@ Command::Command(char *name, int _lineNum, char *_lineStr)
 		type = Sound_Buzzer;
 	else if (strcasecmp(name, "wait_press") == 0)
 		type = Wait_Press;
-	else if (strcasecmp(name, "wait_release") == 0)
-		type = Wait_Release;
+	else if (strcasecmp(name, "wait_pressed") == 0)
+		type = Wait_Pressed;
+	else if (strcasecmp(name, "wait_released") == 0)
+		type = Wait_Released;
 	else if (strcasecmp(name, "wait_high") == 0)
 		type = Wait_High;
 	else if (strcasecmp(name, "wait_low") == 0)
@@ -228,7 +230,8 @@ bool Command::isGpio()
  */
 bool Command::isGpioSwitch()
 {
-	return (type == Wait_Press || type == Wait_Release);
+	return (type == Wait_Press || type == Wait_Pressed
+		 || type == Wait_Released);
 }
 
 
@@ -336,7 +339,8 @@ bool Command::validateParams(char *params)
 	switch (type) {
 
 		case Wait_Press:
-		case Wait_Release:
+		case Wait_Pressed:
+		case Wait_Released:
 		case Wait_High:
 		case Wait_Low:
 			// Expect pin number
@@ -1371,7 +1375,8 @@ bool Command::validParam(int num)
 	if (num != -1){
 		switch (type){
 			case Wait_Press:
-			case Wait_Release:
+			case Wait_Pressed:
+			case Wait_Released:
 			case Wait_High:
 			case Wait_Low:
 			case Output_High:
@@ -1806,11 +1811,12 @@ void Command::reportAdvanced()
 	printf("\n");
 	printf("GPIO\n");
 	printf("----\n");
-	printf("  wait_press 1           Wait for switch 1 to be pressed.\n");
+	printf("  wait_press 1           Wait for switch 1 to be released and then pressed.\n");
 	printf("                         Note: Internal pull-up resistor will be enabled or\n");
 	printf("                         internal pull-down resistor if you are using a\n");
 	printf("                         Pibrella add-on board.\n");
-	printf("  wait_release 1         Wait for switch 1 to be released.\n");
+	printf("  wait_pressed 1         Only wait if switch 1 is not being pressed.\n");
+	printf("  wait_released 1        Only wait if switch 1 is being pressed.\n");
 	printf("  wait_high 1            Wait for input 1 to go high.\n");
 	printf("  wait_low 1             Wait for input 1 to go low.\n");
 	printf("  output_high 1          Set output 1 high.\n");
@@ -1984,8 +1990,9 @@ void Command::reportPibrella()
 	printf("\n");
 	printf("Input/Output\n");
 	printf("------------\n");
-	printf("  wait_press Button      Wait for Button to be pressed.\n");
-	printf("  wait_release Button    Wait for Button to be released.\n");
+	printf("  wait_press Button      Wait for Button to be released and then pressed.\n");
+	printf("  wait_pressed Button    Only wait if Button is not being pressed.\n");
+	printf("  wait_released Button   Only wait if Button is being pressed.\n");
 	printf("  turn_on Red            Turn on the Red LED.\n");
 	printf("  turn_off Red           Turn off the Red LED.\n");
 	printf("  flash Amber 1.5        Flash the Amber LED every 1.5 seconds.\n");

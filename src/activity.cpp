@@ -123,8 +123,8 @@ bool Activity::exec(Command *command, double now)
 
 			mIter--;
 			mWaiting = true;
-			// Wait for 40ms before checking wait condition
-			mNextAdvance = now + 40;
+			// Wait for 30ms before checking wait condition
+			mNextAdvance = now + 30;
 			return true;
 
         case Command::Start_Sound:
@@ -203,8 +203,8 @@ bool Activity::exec(Command *command, double now)
 
 			mIter--;
 			mWaiting = true;
-			// Wait for 40ms before checking wait condition
-			mNextAdvance = now + 40;
+			// Wait for 30ms before checking wait condition
+			mNextAdvance = now + 30;
 			return true;
 
 		case Command::Save_Recording:
@@ -218,7 +218,7 @@ bool Activity::exec(Command *command, double now)
 
 			mIter--;
 			mWaiting = true;
-			mNextAdvance = now + 40;
+			mNextAdvance = now + 30;
 			return true;
 
         case Command::Wait_High:
@@ -228,11 +228,31 @@ bool Activity::exec(Command *command, double now)
 
 			mIter--;
 			mWaiting = true;
-			mNextAdvance = now + 40;
+			mNextAdvance = now + 30;
 			return true;
 
         case Command::Wait_Press:
 			gpio = (Gpio *)command->object;
+			// We want the switch to be released first
+			// if it is already being pressed so initial
+			// wanted state is not pressed.
+			if (Gpio::usingPibrella())
+				wantedState = 0;
+			else
+				wantedState = 1;
+
+			// if switch is not already released we need
+			// to wait for it to be released before
+			// waiting for it to be pressed.
+			command->waitRelease = (!gpio->isState(wantedState));
+
+			mIter--;
+			mWaiting = true;
+			mNextAdvance = now + 30;
+			return true;
+
+        case Command::Wait_Pressed:
+			gpio = (Gpio *)command->object;
 			if (Gpio::usingPibrella())
 				wantedState = 1;
 			else
@@ -241,12 +261,13 @@ bool Activity::exec(Command *command, double now)
 			if (gpio->isState(wantedState))
 				return true;
 
+			command->waitRelease = false;
 			mIter--;
 			mWaiting = true;
-			mNextAdvance = now + 40;
+			mNextAdvance = now + 30;
 			return true;
 
-        case Command::Wait_Release:
+        case Command::Wait_Released:
 			gpio = (Gpio *)command->object;
 			if (Gpio::usingPibrella())
 				wantedState = 0;
@@ -258,7 +279,7 @@ bool Activity::exec(Command *command, double now)
 
 			mIter--;
 			mWaiting = true;
-			mNextAdvance = now + 40;
+			mNextAdvance = now + 30;
 			return true;
 
         case Command::Read_Input:
@@ -462,8 +483,8 @@ bool Activity::exec(Command *command, double now)
 			mIter--;
 			mWaiting = true;
 			mSignalled = false;
-			// Wait for 40ms before checking wait condition
-			mNextAdvance = now + 40;
+			// Wait for 30ms before checking wait condition
+			mNextAdvance = now + 30;
 			return true;
 
 		case Command::Stop:
@@ -642,8 +663,8 @@ bool Activity::wait(Command *command, double now)
 				mWaiting = false;
 				return true;
 			}
-			// Check again in 40ms time
-			mNextAdvance = now + 40;
+			// Check again in 30ms time
+			mNextAdvance = now + 30;
 			return true;
 
 		case Command::Start_Recording:
@@ -661,7 +682,7 @@ bool Activity::wait(Command *command, double now)
 			if (gpio->isState(0))
 				mWaiting = false;
 			else
-				mNextAdvance = now + 40;
+				mNextAdvance = now + 30;
 
 			return true;
 
@@ -670,25 +691,35 @@ bool Activity::wait(Command *command, double now)
 			if (gpio->isState(1))
 				mWaiting = false;
 			else
-				mNextAdvance = now + 40;
+				mNextAdvance = now + 30;
 
 			return true;
 
         case Command::Wait_Press:
+        case Command::Wait_Pressed:
 			gpio = (Gpio *)command->object;
 			if (Gpio::usingPibrella())
 				wantedState = 1;
 			else
 				wantedState = 0;
 
+			if (command->waitRelease){
+				// Has switch been released yet?
+				if (!gpio->isState(wantedState))
+					command->waitRelease = false;
+
+				mNextAdvance = now + 30;
+				return true;
+			}
+
 			if (gpio->isState(wantedState))
 				mWaiting = false;
 			else
-				mNextAdvance = now + 40;
+				mNextAdvance = now + 30;
 
 			return true;
 
-        case Command::Wait_Release:
+        case Command::Wait_Released:
 			gpio = (Gpio *)command->object;
 			if (Gpio::usingPibrella())
 				wantedState = 0;
@@ -698,7 +729,7 @@ bool Activity::wait(Command *command, double now)
 			if (gpio->isState(wantedState))
 				mWaiting = false;
 			else
-				mNextAdvance = now + 40;
+				mNextAdvance = now + 30;
 
 			return true;
 
@@ -708,8 +739,8 @@ bool Activity::wait(Command *command, double now)
 				mWaiting = false;
 				return true;
 			}
-			// Check again in 40ms time
-			mNextAdvance = now + 40;
+			// Check again in 30ms time
+			mNextAdvance = now + 30;
 			return true;
 
         case Command::Play_Note:

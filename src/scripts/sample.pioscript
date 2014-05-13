@@ -21,7 +21,6 @@ wait_press 0
 output_high 3
 play_sound sounds/left.wav
 output_low 3
-wait_release 0
 repeat
 
 :Sound 2
@@ -29,5 +28,4 @@ wait_press 1
 output_high 4
 play_sound sounds/right.wav
 output_low 4
-wait_release 1
 repeat
