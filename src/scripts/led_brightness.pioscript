@@ -1,0 +1,45 @@
+#
+# This script increases the brightness of the LED on pin 2 by 20%
+# each time you press the switch on pin 9. When it reaches full
+# brightness it is then decreased by 20% each time you press the
+# switch.
+#
+# Press and hold the switch to exit the script.
+#
+print
+print "Press the switch to change the brightness of the LED"
+print "or press and hold the switch to quit."
+set percent = 0
+set increasing = TRUE
+start_activity Change Brightness
+wait_longpress 9
+turn_off *
+exit
+
+
+#
+# This is the 'Change Brightness' activity
+#
+activity Change Brightness
+wait_press 9
+
+if increasing
+	set percent = percent + 20
+else
+	set percent = percent - 20
+end_if
+
+if percent >= 100
+	print "LED is now at full brightness"
+	set percent = 100
+	set increasing = FALSE
+else if percent <= 0
+	print "LED is now off"
+	set percent = 0
+	set increasing = TRUE
+else
+	print "LED is now at " percent "% brightness"
+end_if
+
+set_brightness 2 percent
+repeat

@@ -1,0 +1,41 @@
+# This script simulates a traffic light. When the Button is
+# pressed the light will change to red so you can cross the
+# road. After a short delay it will change back to green.
+#
+# Press and hold the Button to exit the script.
+#
+use_addon Pibrella
+start_activity Traffic Light
+wait_longpress Button
+stop_activity Traffic Light
+turn_off *
+exit
+
+#
+# This is the 'Traffic Light' activity
+#
+activity Traffic Light
+turn_off *
+turn_on Green
+print
+print "Press the Button to cross the road"
+wait_press Button
+turn_off Green
+turn_on Amber
+wait 2
+turn_off Amber
+turn_on Red
+wait 2
+do_activity Cross The Road
+wait 2
+turn_on Amber
+wait 2
+repeat
+
+#
+# This is the 'Cross The Road' activity
+#
+activity Cross The Road
+for (count = 0) (count < 15) (count = count + 1)
+	play_note C3 0.25
+end_for

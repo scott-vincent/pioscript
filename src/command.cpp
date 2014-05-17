@@ -841,8 +841,15 @@ char *Command::addForParams(char *params)
 			return NULL;
 		}
 
+		// If whole thing is enclosed in brackets remove them
+		char *endPos = pos;
+		while (*startPos == '('){
+			startPos++;
+			endPos--;
+		}
+
 		char str[256];
-		int len = pos - startPos;
+		int len = endPos - startPos;
 		strncpy(str, startPos, len);
 		str[len] = '\0';
 

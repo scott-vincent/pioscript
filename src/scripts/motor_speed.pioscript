@@ -1,0 +1,47 @@
+#
+# This script increases the speed of the motor attached to pin 0
+# by 20% each time you press the switch on pin 9. When it reaches
+# full speed it is then decreased by 20% each time you press the
+# switch.
+#
+# Press and hold the switch to exit the script.
+#
+print
+print "Make sure you have attached a motor to pin 0."
+print
+print "Press the switch to change the speed of the motor"
+print "or press and hold the switch to quit."
+set percent = 0
+set increasing = TRUE
+start_activity Change Speed
+wait_longpress 9
+turn_off *
+exit
+
+
+#
+# This is the 'Change Speed' activity
+#
+activity Change Speed
+wait_press 9
+
+if increasing
+	set percent = percent + 20
+else
+	set percent = percent - 20
+end_if
+
+if percent >= 100
+	print "Motor is now at full speed"
+	set percent = 100
+	set increasing = FALSE
+else if percent <= 0
+	print "Motor is now off"
+	set percent = 0
+	set increasing = TRUE
+else
+	print "Motor is now at " percent "% speed"
+end_if
+
+set_power 0 percent
+repeat

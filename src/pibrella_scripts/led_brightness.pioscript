@@ -1,0 +1,45 @@
+#
+# This script increases the brightness of the Green LED by 20%
+# each time you press the Button. When it reaches full brightness
+# it is then decreased by 20% each time you press the Button.
+#
+# Press and hold the Button to exit the script.
+#
+use_addon Pibrella
+print
+print "Press the Button to change the brightness of the Green LED"
+print "or press and hold the Button to quit."
+set percent = 0
+set increasing = TRUE
+start_activity Change Brightness
+wait_longpress Button
+turn_off *
+exit
+
+
+#
+# This is the 'Change Brightness' activity
+#
+activity Change Brightness
+wait_press Button
+
+if increasing
+	set percent = percent + 20
+else
+	set percent = percent - 20
+end_if
+
+if percent >= 100
+	print "LED is now at full brightness"
+	set percent = 100
+	set increasing = FALSE
+else if percent <= 0
+	print "LED is now off"
+	set percent = 0
+	set increasing = TRUE
+else
+	print "LED is now at " percent "% brightness"
+end_if
+
+set_brightness Green percent
+repeat
