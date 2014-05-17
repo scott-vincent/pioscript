@@ -27,6 +27,7 @@ Other Advantages
 ----------------
 - Pibrella Support - There is full built-in support for the Pibrella add-on board which makes it very easy for primary school children to get up and running quickly. They can use easy to remember names for the GPIO inputs/outputs instead of trying to understand pin numbers.
 - Play Songs - The play_song command can be used to play a complete song by specifying a sequence of musical note names with optional octave number and duration. If a Pibrella is being used the song will play on its built-in buzzer meaning that speakers do not have to be attached to the Pi.
+- Record Sounds - There is support for recording when a USB microphone or USB camera with built-in mic is attached. The recorder can also be used to trigger actions when a noise is heard. See the example scripts 'push_to_record' and 'voice_activated_record'.
 
 Let's Go
 --------
