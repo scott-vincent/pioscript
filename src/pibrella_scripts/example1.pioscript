@@ -1,8 +1,7 @@
-:main
 use_addon Pibrella
 turn_on Red
 turn_on Amber
 turn_on Green
-print >>  Press the button to turn off the lights  <<
+print "Press the button to turn off the lights"
 wait_press Button
 turn_off *

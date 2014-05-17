@@ -12,14 +12,13 @@
 # drop the output voltage down from 5V to a safe input
 # voltage.
 
-:main
 use_addon Pibrella
-start Measure
+start_activity Measure
 wait_press Button
 exit
 
-:Measure
+activity Measure
 read_input InputA OutputE
-print $input
+print input
 wait .1
 repeat

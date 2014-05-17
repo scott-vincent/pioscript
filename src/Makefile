@@ -11,7 +11,7 @@ SDL_CFLAGS = $(shell sdl-config --cflags)
 SDL_LFLAGS = $(shell sdl-config --libs)
 
 OTHER_CFLAGS = -I/usr/local/include
-OTHER_LFLAGS = -L/usr/local/lib -lwiringPi -lSDL_mixer -lportaudio
+OTHER_LFLAGS = -L/usr/local/lib -lwiringPi -lSDL_mixer -lportaudio -lsamplerate
 
 CFLAGS = $(NODEBUG) $(SDL_CFLAGS) $(OTHER_CFLAGS) -std=c++0x -pthread
 LFLAGS = $(SDL_LFLAGS) $(OTHER_LFLAGS)

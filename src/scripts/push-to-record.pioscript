@@ -1,0 +1,21 @@
+# Press and hold the switch on pin 9 to record some sound. Wait for
+# the LED on pin 2 to light up before speaking. When you release the
+# switch the sound will be played back.
+#
+# Press Ctrl-C to quit. The last sound recorded will be saved in
+# the mysound.wav file.
+
+print
+print "Press and hold the switch to record some sound."
+print "Don't start speaking until the LED is lit."
+wait_pressed 9
+start_recording
+turn_on 2
+wait_released 9
+stop_recording
+turn_off 2
+save_recording sounds/mysound.wav
+print "Your recording has been saved to file sounds/mysound.wav"
+print "Playing back your recording..."
+play_sound sounds/mysound.wav
+repeat

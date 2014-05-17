@@ -11,12 +11,14 @@
 #include <unistd.h>
 #include "record.h"
 #include "engine.h"
+#include "sample.h"
 
 
 /**
  * This is the PortAudio callback function. It needs to
  * process the buffer as quickly as possible and save
- * the data to our own buffer.
+ * the data to our own buffer. Note that the created
+ * buffer is in mono.
  */
 static int recordCallback(const void *inputBuffer, void *outputBuffer,
 						  unsigned long framesPerBuffer,
@@ -26,14 +28,13 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 {
 	const Record::SAMPLE *src = (const Record::SAMPLE*)inputBuffer;
 	Record::RecordData *data = (Record::RecordData*)userData;
-	Record::SAMPLE *dest = &data->samples[data->frameIndex * 2];
+	Record::SAMPLE *dest = &data->samples[data->frameIndex];
 
 	// Put one frame in the buffer so we know we know we have
 	// started recording.
 	if (data->frameIndex == 0){
 		data->frameIndex = 1;
 		data->samples[0] = 0;
-		data->samples[1] = 0;
 		data->silenceStart = 1;
 		data->soundStart = -1;
 		data->soundCount = 0;
@@ -41,16 +42,15 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 		data->silenceEnd = -1;
 	}
 
-	// Save the frame buffer and convert from mono to stereo.
+	// Save the frame buffer (will be in mono).
 	// Any sound must be longer than 500 frames otherwise it is
 	// deemed to be a crackle and will be replaced with silence.
-	// Any sound below the threshold (1500) will be deemed to be
+	// Any sound below the threshold will be deemed to be
 	// background noise and will be replaced with silence but
 	// only if it lasts for more than 8000 frames as we don't
 	// want to replace short snippets of background noise, e.g.
 	// inbetween spoken words. 
 	for (int i = 0; i < framesPerBuffer; i++){
-		*dest++ = *src;
 		*dest++ = *src;
 		if (*src < -(data->recordingLevel) || *src > data->recordingLevel)
 		{
@@ -71,17 +71,15 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 				}
 				if (data->silenceStart == 1){
 					// Remove silence at start
-					dest = &data->samples[2];
+					dest = &data->samples[1];
 					data->frameIndex = 0;
 				}
 				else {
 					// Make silence really silent (remove background noise)
 					int silenceLen = data->frameIndex - data->silenceStart;
-					dest = &data->samples[data->silenceStart * 2];
-					for (int j = 0; j < silenceLen; j++){
+					dest = &data->samples[data->silenceStart];
+					for (int j = 0; j < silenceLen; j++)
 						*dest++ = 0;
-						*dest++ = 0;
-					}
 
 					if (data->silenceStart == data->silenceEnd)
 						data->silenceLen += silenceLen;
@@ -100,16 +98,30 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 
 			data->silenceStart = data->frameIndex + 1;
 		}
-		else if (data->soundTriggered && data->silenceLen
-			 + (data->frameIndex - data->silenceStart) >= data->silenceWanted)
+		else if (data->soundTriggered && (data->silenceLen
+			 + (data->frameIndex - data->silenceStart) >= data->silenceWanted))
 		{
+printf("silence len=%d, frame index=%d, silence start=%d, silence wanted=%d\n",
+data->silenceLen, data->frameIndex, data->silenceStart, data->silenceWanted);
 			// Final silence length reached
 			data->frameIndex = data->silenceStart;
 			return paComplete;
 		}
 		src++;
 		data->frameIndex++;
-		if (data->frameIndex >= data->soundWanted){
+		if (data->soundWanted == 0){
+			// Listening mode. When buffer is full just start again.
+			if (data->frameIndex >= data->maxFrames){
+				dest = &data->samples[1];
+				data->frameIndex = 1;
+				data->silenceStart = 1;
+				data->soundStart = -1;
+				data->soundCount = 0;
+				data->silenceLen = 0;
+				data->silenceEnd = -1;
+			}
+		}
+		else if (data->frameIndex >= data->soundWanted){
 			// Final sound length reached
 			return paComplete;
 		}
@@ -127,6 +139,7 @@ Record::Record()
 	mInit = false;
 	mStream = NULL;
 	mSaving = false;
+	mConverted = false;
 
 	// Default recording level is 5
 	setLevel(5000);
@@ -138,9 +151,10 @@ Record::Record()
 	int fd = dup(STDERR_FILENO);
 	freopen("/dev/null", "w", stderr);
 	err = Pa_Initialize();
-	fclose(stderr);
-	stderr = fdopen(fd, "w");
 	if (err != paNoError) {
+		// Stop sinking stderr
+		fclose(stderr);
+		stderr = fdopen(fd, "w");
 		fprintf(stderr, "Unable to initialise PortAudio: %s\n",
 				Pa_GetErrorText(err));
 		return;
@@ -148,6 +162,9 @@ Record::Record()
 
 	inputParams.device = Pa_GetDefaultInputDevice();
 	if (inputParams.device == paNoDevice){
+		// Stop sinking stderr
+		fclose(stderr);
+		stderr = fdopen(fd, "w");
 		fprintf(stderr, "No recording device found. Make sure you've connected a USB microphone (or USB webcam with built-in mic).\n");
 		Pa_Terminate();
 		return;
@@ -158,30 +175,56 @@ Record::Record()
 	inputParams.suggestedLatency = Pa_GetDeviceInfo(inputParams.device)->defaultLowInputLatency;
 	inputParams.hostApiSpecificStreamInfo = NULL;
 
-	// Initialise the data buffer so we can store up
-	// to 100 seconds of recorded audio in stereo.
-	mRecordData.maxFrames = MAX_DURATION * 44100;
-	int maxBytes = mRecordData.maxFrames * sizeof(SAMPLE) * 2;
-	mRecordData.samples = (SAMPLE*)malloc(maxBytes);
-	if (!mRecordData.samples){
-		fprintf(stderr, "Failed to allocate memory for record buffer\n");
-		Pa_Terminate();
-		return;
-	}
-
+	mRecordData.actualRate = INTERNAL_RATE;
+printf("**************   Forcing sample rate to 48 Khz   ****************\n");
+mRecordData.actualRate = ALTERNATE_RATE;
+	// Use 50ms buffer
+	int framesPerBuffer = mRecordData.actualRate / 20;
     err = Pa_OpenStream(
               &mStream,
               &inputParams,
               NULL,
-              44100,		// Sample rate
-              2205,			// Frames per buffer (buffer = 50ms)
+              mRecordData.actualRate,
+              framesPerBuffer,
               paClipOff,
               recordCallback,
               &mRecordData);
+
+	// If recording device doesn't like our preferred sample
+	// rate use the alternative one.
+	if (err == paInvalidSampleRate){
+		mRecordData.actualRate = ALTERNATE_RATE;
+		// Use 50ms buffer
+		int framesPerBuffer = mRecordData.actualRate / 20;
+	    err = Pa_OpenStream(
+              	&mStream,
+              	&inputParams,
+              	NULL,
+              	mRecordData.actualRate,
+              	framesPerBuffer,
+              	paClipOff,
+              	recordCallback,
+              	&mRecordData);
+	}
+
+	// Stop sinking stderr
+	fclose(stderr);
+	stderr = fdopen(fd, "w");
+
 	if (err != paNoError) {
 		fprintf(stderr, "Unable to open PortAudio recording stream: %s\n",
 				Pa_GetErrorText(err));
-		free(mRecordData.samples);
+		Pa_Terminate();
+		return;
+	}
+
+	// Initialise the data buffer so we can store up
+	// to 100 seconds of recorded audio in stereo.
+	mRecordData.maxFrames = MAX_DURATION * mRecordData.actualRate;
+	int maxBytes = mRecordData.maxFrames * sizeof(SAMPLE) * 2;
+	mRecordData.samples = (SAMPLE*)malloc(maxBytes);
+	if (!mRecordData.samples){
+		fprintf(stderr, "Failed to allocate memory for record buffer\n");
 		Pa_Terminate();
 		return;
 	}
@@ -209,7 +252,7 @@ Record::~Record()
 bool Record::setLevel(int level)
 {
 	// Level is in thousandths. Default is 5 and max is 100.
-	// Convert to value between 0 and 30,000.
+	// Convert to value between 0 and 10,000.
 	mRecordData.recordingLevel = (level * 3) / 10;
 }
 
@@ -220,7 +263,7 @@ bool Record::setLevel(int level)
  * Every time the frame buffer fills the callback will
  * be called.
  */
-bool Record::startStream()
+bool Record::startStream(int soundWanted, int silenceWanted)
 {
 	if (!mInit){
 		fprintf(stderr, "PortAudio not initialised\n");
@@ -241,12 +284,27 @@ bool Record::startStream()
 	// We are either doing a fixed length recording or a
 	// recording that starts when there is no silence and
 	// stops when there is silence.
-	mRecordData.soundWanted = mRecordData.maxFrames;
-	mRecordData.silenceWanted = 22050;
+	mRecordData.soundTriggered = false;
+	if (soundWanted == -1)
+		mRecordData.soundWanted = mRecordData.maxFrames;
+	else
+		mRecordData.soundWanted =
+					(soundWanted * (mRecordData.actualRate / 100)) / 10;
+
+	if (silenceWanted == -1){
+		// Want recordeding to start immediately and don't
+		// want recording to stop when silence is heard.
+		mRecordData.silenceWanted = mRecordData.maxFrames;
+		mRecordData.soundTriggered = true;
+	}
+	else
+		mRecordData.silenceWanted =
+					(silenceWanted * (mRecordData.actualRate / 100)) / 10;
+
+	mConverted = false;
 
 	// Start recording
 	mRecordData.frameIndex = 0;
-	mRecordData.soundTriggered = false;
 	PaError err = Pa_StartStream(mStream);
 	if (err != paNoError){
 		fprintf(stderr, "** Failed to start PortAudio recording: %s\n",
@@ -296,10 +354,20 @@ bool Record::saveWAV(const char *filename, Audio *audio)
 	mSaving = true;
 	stopStream();
 
-	if (mRecordData.frameIndex == 0){
-		mRecordData.samples[0] = 0;
-		mRecordData.samples[1] = 0;
-		mRecordData.frameIndex = 1;
+	if (!mConverted){
+		mConverted = true;
+
+		// Add one frame of silence if buffer is empty
+		if (mRecordData.frameIndex == 0){
+			mRecordData.samples[0] = 0;
+			mRecordData.frameIndex = 1;
+		}
+
+		// Convert from mono to stereo and also adjust
+		// the sample rate if it is wrong.
+		mRecordData.frameIndex = Sample::convert(
+				mRecordData.samples, 1, mRecordData.frameIndex,
+				mRecordData.actualRate);
 	}
 
 	static const int headerSize = 44;
@@ -315,15 +383,15 @@ bool Record::saveWAV(const char *filename, Audio *audio)
 	memcpy(&header[16], &val, 4);
 	short sval = 1;		// Type = PCM
 	memcpy(&header[20], &sval, 2);
-	sval = 2;		// Stereo (2 channels)
+	sval = 2;			// Stereo (2 channels)
 	memcpy(&header[22], &sval, 2);
-	val = 44100;	// Sample rate
+	val = INTERNAL_RATE;		// Sample rate
 	memcpy(&header[24], &val, 4);
-	val = 176400;	// Sample rate * 2 (16-bit) * channels
+	val = INTERNAL_RATE * 4;	// Sample rate * 2 (16-bit) * channels
 	memcpy(&header[28], &val, 4);
-	sval = 4;		// 2 (16-bit) * channels
+	sval = 4;			// 2 (16-bit) * channels
 	memcpy(&header[32], &sval, 2);
-	sval = 16;		// Bits per sample
+	sval = 16;			// Bits per sample
 	memcpy(&header[34], &sval, 2);
 	memcpy(&header[36], "data", 4);
 	memcpy(&header[40], &dataSize, 4);
@@ -366,84 +434,25 @@ bool Record::playWAV(Audio *audio, double now)
 
 	stopStream();
 
-	if (mRecordData.frameIndex == 0){
-		mRecordData.samples[0] = 0;
-		mRecordData.samples[1] = 0;
-		mRecordData.frameIndex = 1;
+	if (!mConverted){
+		mConverted = true;
+
+		// Add one frame of silence if buffer is empty
+		if (mRecordData.frameIndex == 0){
+			mRecordData.samples[0] = 0;
+			mRecordData.frameIndex = 1;
+		}
+
+		// Convert from mono to stereo and also adjust
+		// the sample rate if it is wrong.
+		mRecordData.frameIndex = Sample::convert(
+				mRecordData.samples, 1, mRecordData.frameIndex,
+				mRecordData.actualRate);
 	}
 
 	int dataSize = mRecordData.frameIndex * sizeof(SAMPLE) * 2;
-
 	if (!audio->replaceWAV(mRecordData.samples, dataSize))
 		return false;
 
 	return audio->play(0, now);
 }
-
-
-/*
-	int firstSound = 0;
-	int lastSound = -1;
-	int silenceStart = 0;
-	int soundStart = -1;
-	for (int i=0; i<numSamples; i++){
-		// Duplicate each sample (channels are interleaved)
-		recBuff[i*2] = recordedSamples[i];
-		recBuff[i*2+1] = recordedSamples[i];
-
-		if (recordedSamples[i] < -1500 || recordedSamples[i] > 1500){
-			// Found some sound
- 			if (i - silenceStart > 8000){
-				if (soundStart > -1 && (silenceStart - soundStart) < 500){
-					// Remove very short sounds, i.e. noise
-					//printf("Noise at %d, len = %d\n", soundStart, silenceStart - soundStart);
-					silenceStart = soundStart;
-				}
-				if (soundStart > -1 && soundStart < silenceStart){
-					printf("Sound at %d, len = %d\n", soundStart, silenceStart - soundStart);
-					lastSound = silenceStart;
-				}
-				printf("Silence at %d, len = %d\n", silenceStart, i - silenceStart);
-
-				if (firstSound == silenceStart){
-					// Skip silence at start
-					firstSound = i;
-				} else {
-					// Make silence really silent (remove background noise)
-					for (int j = silenceStart; j < i; j++){
-						recBuff[j*2] = 0;
-						recBuff[j*2+1] = 0;
-					}
-				}
-				soundStart = i;
-			}
-			silenceStart = i + 1;
-		}
-	}
-
-	// Remove very short sounds, i.e. noise
-	if (soundStart > -1 && (silenceStart - soundStart) < 500){
-		//printf("Noise at %d, len = %d\n", soundStart, silenceStart - soundStart);
-		silenceStart = soundStart;
-	}
-	if (soundStart > -1 && soundStart < silenceStart){
-		printf("Sound at %d, len = %d\n", soundStart, silenceStart - soundStart);
-		lastSound = silenceStart;
-	}
-
-	printf("Silence at %d, len = %d\n", silenceStart, numSamples - silenceStart);
-	if (lastSound > firstSound)
-		numSamples = lastSound - firstSound;
-	else
-		numSamples = 0;
-
-	printf("Start = %d (%d ms), len = %d (%d ms)\n",  firstSound, firstSound / 44, numSamples, numSamples / 44);
-
-	if (numSamples == 0){
-		printf("Nothing recorded\n");
-        return 1;
-	}
-
-	SAMPLE* dataStart = recBuff + firstSound * 2;
-	int	dataSize = 2 * sizeof(SAMPLE) * numSamples;
-*/

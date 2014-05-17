@@ -1,0 +1,23 @@
+# Press the switch on pin 9 to record 10 seconds of sound.
+# The LED on pin 2 will light up when recording is in progress.
+# When the recording has completed it will be played back.
+#
+# Press and hold the switch for more than 1 second to exit.
+
+start_activity Record Sound
+wait_longpress 9
+stop_recording
+turn_off *
+exit
+
+activity Record Sound
+print
+print "Press the switch to record 10 seconds of sound"
+print "or press and hold the switch to exit."
+wait_press 9
+turn_on 2
+record_sound 10
+turn_off 2
+print "Playing back your recording..."
+play_recording
+repeat

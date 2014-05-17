@@ -123,8 +123,8 @@ bool Activity::exec(Command *command, double now)
 
 			mIter--;
 			mWaiting = true;
-			// Wait for 30ms before checking wait condition
-			mNextAdvance = now + 30;
+			// Wait for 40ms before checking wait condition
+			mNextAdvance = now + 40;
 			return true;
 
         case Command::Start_Sound:
@@ -183,18 +183,44 @@ bool Activity::exec(Command *command, double now)
 			else
 				return Audio::fadeoutAll(command->param[0].getValue());
 
-		case Command::Start_Recording:
-			if (!Engine::recorder->startStream())
+		case Command::Record_Sound:
+			if (!Engine::recorder->startStream(command->param[0].getValue(), -1))
 				return false;
 
 			mIter--;
 			mWaiting = true;
-			// Wait for 30ms before checking wait condition
-			mNextAdvance = now + 30;
+			// Wait for 40ms before checking wait condition
+			mNextAdvance = now + 40;
+			return true;
+
+		case Command::Start_Recording:
+			return Engine::recorder->startStream(-1, -1);
+
+		case Command::Start_Recording_Wait:
+			if (!Engine::recorder->startStream(-1, command->param[0].getValue()))
+				return false;
+
+			mIter--;
+			mWaiting = true;
+			// Wait for 40ms before checking wait condition
+			mNextAdvance = now + 40;
+			return true;
+
+		case Command::Start_Listening_Wait:
+			if (!Engine::recorder->startStream(0, command->param[0].getValue()))
+				return false;
+
+			mIter--;
+			mWaiting = true;
+			// Wait for 40ms before checking wait condition
+			mNextAdvance = now + 40;
 			return true;
 
 		case Command::Stop_Recording:
 			return Engine::recorder->stopStream();
+
+		case Command::Recording_Level:
+			return Engine::recorder->setLevel(command->param[0].getValue());
 
 		case Command::Play_Recording:
 			audio = (Audio *)command->object;
@@ -203,8 +229,8 @@ bool Activity::exec(Command *command, double now)
 
 			mIter--;
 			mWaiting = true;
-			// Wait for 30ms before checking wait condition
-			mNextAdvance = now + 30;
+			// Wait for 40ms before checking wait condition
+			mNextAdvance = now + 40;
 			return true;
 
 		case Command::Save_Recording:
@@ -218,7 +244,7 @@ bool Activity::exec(Command *command, double now)
 
 			mIter--;
 			mWaiting = true;
-			mNextAdvance = now + 30;
+			mNextAdvance = now + 40;
 			return true;
 
         case Command::Wait_High:
@@ -228,10 +254,11 @@ bool Activity::exec(Command *command, double now)
 
 			mIter--;
 			mWaiting = true;
-			mNextAdvance = now + 30;
+			mNextAdvance = now + 40;
 			return true;
 
         case Command::Wait_Press:
+		case Command::Wait_LongPress:
 			gpio = (Gpio *)command->object;
 			// We want the switch to be released first
 			// if it is already being pressed so initial
@@ -245,10 +272,11 @@ bool Activity::exec(Command *command, double now)
 			// to wait for it to be released before
 			// waiting for it to be pressed.
 			command->waitRelease = (!gpio->isState(wantedState));
+			command->pressStart = now;
 
 			mIter--;
 			mWaiting = true;
-			mNextAdvance = now + 30;
+			mNextAdvance = now + 40;
 			return true;
 
         case Command::Wait_Pressed:
@@ -264,7 +292,7 @@ bool Activity::exec(Command *command, double now)
 			command->waitRelease = false;
 			mIter--;
 			mWaiting = true;
-			mNextAdvance = now + 30;
+			mNextAdvance = now + 40;
 			return true;
 
         case Command::Wait_Released:
@@ -279,7 +307,7 @@ bool Activity::exec(Command *command, double now)
 
 			mIter--;
 			mWaiting = true;
-			mNextAdvance = now + 30;
+			mNextAdvance = now + 40;
 			return true;
 
         case Command::Read_Input:
@@ -474,20 +502,20 @@ bool Activity::exec(Command *command, double now)
 			mWaiting = true;
 			return true;
 
-		case Command::Start:
+		case Command::Start_Activity:
 			mNewActivity = (Method *)command->object;
 			return true;
 
-		case Command::Start_Wait:
+		case Command::Do_Activity:
 			mNewActivity = (Method *)command->object;
 			mIter--;
 			mWaiting = true;
 			mSignalled = false;
-			// Wait for 30ms before checking wait condition
-			mNextAdvance = now + 30;
+			// Wait for 40ms before checking wait condition
+			mNextAdvance = now + 40;
 			return true;
 
-		case Command::Stop:
+		case Command::Stop_Activity:
 			mStopActivity = (Method *)command->object;
 			return true;
 
@@ -532,20 +560,31 @@ bool Activity::exec(Command *command, double now)
 								 command->funcObject);
 	
 		case Command::If:
-			if (!Variable::evaluate(command->nameParam.getStrValue(),
-									command->funcObject, value))
-				return false;
+			while (true){
+				// Condition satisfied?
+				if (!Variable::evaluate(command->nameParam.getStrValue(),
+										command->funcObject, value))
+					return false;
 
-			condition = (value != 0);
-			if (!condition){
-				// Jump to line after Else
-				jumpForwards(command->nestEndLine);
+				condition = (value != 0);
+				if (condition){
+					return true;
+				}
+
+				// Jump to next condition (Else_If)
+				command = jumpForwards(command->nestEndLine);
+				if (command->type != Command::Else_If){
+					// No more conditions so we are at Else or End_If
+					return true;
+				}
 			}
-			return true;
 
+		case Command::Else_If:
 		case Command::Else:
 			// Jump to line after End_If
-			jumpForwards(command->nestEndLine);
+			while (command->type != Command::End_If)
+				command = jumpForwards(command->nestEndLine);
+
 			return true;
 
 		case Command::End_If:
@@ -614,18 +653,18 @@ bool Activity::exec(Command *command, double now)
 
 
 /**
- * Move on to line after the one specified (may be past end)
+ * Move forward to line after specified line
  */
-void Activity::jumpForwards(int lineNum)
+Command *Activity::jumpForwards(int lineNum)
 {
+	Command *command;
 	while (true){
-		Command *command = *mIter;
+		command = *mIter;
+		mIter++;
 		if (command->lineNum == lineNum)
 			break;
-
-		mIter++;
 	}
-	mIter++;
+	return command;
 }
 
 
@@ -663,18 +702,29 @@ bool Activity::wait(Command *command, double now)
 				mWaiting = false;
 				return true;
 			}
-			// Check again in 30ms time
-			mNextAdvance = now + 30;
+			// Check again in 80ms time
+			mNextAdvance = now + 80;
 			return true;
 
-		case Command::Start_Recording:
-			if (Engine::recorder->isStarted())
+		case Command::Record_Sound:
+			if (!Engine::recorder->isActive())
 			{
 				mWaiting = false;
 				return true;
 			}
-			// Check again in 30ms time
-			mNextAdvance = now + 30;
+			// Check again in 80ms time
+			mNextAdvance = now + 80;
+			return true;
+
+		case Command::Start_Recording_Wait:
+		case Command::Start_Listening_Wait:
+			if (Engine::recorder->isTriggered())
+			{
+				mWaiting = false;
+				return true;
+			}
+			// Check again in 50ms time
+			mNextAdvance = now + 50;
 			return true;
 
         case Command::Wait_Low:
@@ -682,7 +732,7 @@ bool Activity::wait(Command *command, double now)
 			if (gpio->isState(0))
 				mWaiting = false;
 			else
-				mNextAdvance = now + 30;
+				mNextAdvance = now + 40;
 
 			return true;
 
@@ -691,7 +741,7 @@ bool Activity::wait(Command *command, double now)
 			if (gpio->isState(1))
 				mWaiting = false;
 			else
-				mNextAdvance = now + 30;
+				mNextAdvance = now + 40;
 
 			return true;
 
@@ -708,14 +758,47 @@ bool Activity::wait(Command *command, double now)
 				if (!gpio->isState(wantedState))
 					command->waitRelease = false;
 
-				mNextAdvance = now + 30;
+				mNextAdvance = now + 40;
 				return true;
 			}
 
 			if (gpio->isState(wantedState))
 				mWaiting = false;
 			else
-				mNextAdvance = now + 30;
+				mNextAdvance = now + 40;
+
+			return true;
+
+		case Command::Wait_LongPress:
+			gpio = (Gpio *)command->object;
+			if (Gpio::usingPibrella())
+				wantedState = 1;
+			else
+				wantedState = 0;
+
+			if (command->waitRelease){
+				// Has switch been released yet?
+				if (!gpio->isState(wantedState)){
+					command->waitRelease = false;
+					command->pressStart = now;
+				}
+
+				mNextAdvance = now + 40;
+				return true;
+			}
+
+			// If switch is released reset the timer
+			if (!gpio->isState(wantedState)){
+				command->pressStart = now;
+				mNextAdvance = now + 40;
+				return true;
+			}
+
+			// Has switch been pressed for more than one second?
+			if (now - command->pressStart > 1000)
+				mWaiting = false;
+			else
+				mNextAdvance = now + 40;
 
 			return true;
 
@@ -729,18 +812,18 @@ bool Activity::wait(Command *command, double now)
 			if (gpio->isState(wantedState))
 				mWaiting = false;
 			else
-				mNextAdvance = now + 30;
+				mNextAdvance = now + 40;
 
 			return true;
 
-		case Command::Start_Wait:
+		case Command::Do_Activity:
 			// Has the engine signalled us yet?
 			if (mSignalled){
 				mWaiting = false;
 				return true;
 			}
-			// Check again in 30ms time
-			mNextAdvance = now + 30;
+			// Check again in 40ms time
+			mNextAdvance = now + 40;
 			return true;
 
         case Command::Play_Note:

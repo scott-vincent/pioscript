@@ -118,8 +118,8 @@ bool Script::load()
 			continue;
 
 		// Is this a new method?
-		if (*buff == ':'){
-			if (!defineMethod(&buff[1], lineNum)){
+		if (strlen(buff) >= 8 && strncasecmp(buff, "activity", 8) == 0){
+			if (!defineMethod(&buff[8], lineNum)){
 				fprintf(stderr, "at line %d <%s>\n", lineNum, buff);
 				fclose(inf);
 				return false;
@@ -156,7 +156,7 @@ bool Script::load()
 	fclose(inf);
 
 	if (!mMain){
-		fprintf(stderr, "Method :Main is missing\n");
+		fprintf(stderr, "Activity Main is missing\n");
 		return false;
 	}
 
@@ -165,7 +165,7 @@ bool Script::load()
 	{
 		Method *method = iter->second;
 		if (method->commands.size() == 0){
-			fprintf(stderr, "Activity :%s has not been defined or is empty\n",
+			fprintf(stderr, "Activity %s has not been defined or is empty\n",
 					method->getName());
 			fprintf(stderr, "at line %d\n", method->getLineNum());
 			return false;
@@ -196,13 +196,16 @@ bool Script::load()
  */
 bool Script::defineMethod(const char *name, int lineNum)
 {
+	while (*name == ' ')
+		name++;
+
 	if (*name == '\0'){
-		fprintf(stderr, "Missing method name\n");
+		fprintf(stderr, "Missing activity name\n");
 		return false;
 	}
 
 	if (mCurrentMethod && mCurrentMethod->commands.size() == 0){
-		fprintf(stderr, "Method %s must contain at least one command\n",
+		fprintf(stderr, "Activity %s must contain at least one command\n",
 				mCurrentMethod->getName());
 		return false;
 	}
@@ -214,13 +217,13 @@ bool Script::defineMethod(const char *name, int lineNum)
 
 	// Make sure method has not already been defined
 	if (mCurrentMethod->commands.size() > 0){
-		fprintf(stderr, "Duplicate definition of method %s\n", name);
+		fprintf(stderr, "Duplicate definition of activity %s\n", name);
 		return false;
 	}
 
 	if (strcasecmp(name, "main") == 0){
 		if (mMain){
-			fprintf(stderr, "Only one :main method is allowed\n");
+			fprintf(stderr, "Only one main activity is allowed\n");
 			return false;
 		}
 		mMain = mCurrentMethod;
@@ -238,22 +241,27 @@ bool Script::orphanNestingCheck()
 	if (mCurrentMethod && nestedCommands.size() != 0){
 		Command *nestStart = nestedCommands.back();
 		if (nestStart->type == Command::If){
-			fprintf(stderr, "Method %s has If at line %d with no matching End_If.\n",
+			fprintf(stderr, "Activity %s has If at line %d with no matching End_If.\n",
+					mCurrentMethod->getName(), nestStart->lineNum);
+			return false;
+		}
+		else if (nestStart->type == Command::Else_If){
+			fprintf(stderr, "Activity %s has Else If at line %d with no matching End_If.\n",
 					mCurrentMethod->getName(), nestStart->lineNum);
 			return false;
 		}
 		else if (nestStart->type == Command::Else){
-			fprintf(stderr, "Method %s has Else at line %d with no matching End_If.\n",
+			fprintf(stderr, "Activity %s has Else at line %d with no matching End_If.\n",
 					mCurrentMethod->getName(), nestStart->lineNum);
 			return false;
 		}
 		else if (nestStart->type == Command::While){
-			fprintf(stderr, "Method %s has While at line %d with no matching End_While.\n",
+			fprintf(stderr, "Activity %s has While at line %d with no matching End_While.\n",
 					mCurrentMethod->getName(), nestStart->lineNum);
 			return false;
 		}
 		else if (nestStart->type == Command::For){
-			fprintf(stderr, "Method %s has For at line %d with no matching End_For.\n",
+			fprintf(stderr, "Activity %s has For at line %d with no matching End_For.\n",
 					mCurrentMethod->getName(), nestStart->lineNum);
 			return false;
 		}
@@ -369,7 +377,7 @@ bool Script::addFuncObjects(Command *command, int paramNum, int lineNum)
 	}
 	*lwr = '\0';
 
-	if (strstr(src, "recording("))
+	if (strstr(src, "recording(") || strstr(src, "listening("))
 		mUsesRecording = true;
 
 	while (true){
@@ -463,10 +471,8 @@ bool Script::addFuncObjects(Command *command, int paramNum, int lineNum)
  */
 bool Script::addCommand(char *name, char *params, int lineNum, char *lineStr)
 {
-	if (!mCurrentMethod){
-		fprintf(stderr, "Command must be inside a method\n");
-		return false;
-	}
+	if (!mCurrentMethod)
+		defineMethod("Main", lineNum);
 
 	Command *command = new Command(name, lineNum, lineStr);
 	if (!command->isValid())
@@ -626,12 +632,15 @@ bool Script::addCommand(char *name, char *params, int lineNum, char *lineStr)
 		if (nestedCommands.size() > 0){
 			nestStart = nestedCommands.back();
 			nestedCommands.pop_back();
-			if (command->type == Command::Else)
+			if (command->type == Command::Else
+				|| command->type == Command::Else_If)
 				nestedCommands.push_back(command);
 		}
 		else {
 			// Found end type with no start type
-			if (command->type == Command::Else)
+			if (command->type == Command::Else_If)
+				fprintf(stderr, "Found Else If without a matching If\n");
+			else if (command->type == Command::Else)
 				fprintf(stderr, "Found Else without a matching If\n");
 			else if (command->type == Command::End_If)
 				fprintf(stderr, "Found End_If without a matching If\n");
@@ -645,10 +654,20 @@ bool Script::addCommand(char *name, char *params, int lineNum, char *lineStr)
 
 		// Make sure we have a matching end type
 		if (nestStart->type == Command::If
+				&& command->type != Command::Else_If
 				&& command->type != Command::Else
 				&& command->type != Command::End_If)
 		{
 			fprintf(stderr, "If at line %d has no matching End_If\n",
+					nestStart->lineNum);
+			return false;
+		}
+		else if (nestStart->type == Command::Else_If
+				&& command->type != Command::Else_If
+				&& command->type != Command::Else
+				&& command->type != Command::End_If)
+		{
+			fprintf(stderr, "Else If at line %d has no matching End_If\n",
 					nestStart->lineNum);
 			return false;
 		}

@@ -23,11 +23,14 @@
 
 class Record {
 public:
+	static const int INTERNAL_RATE = 44100;
+	static const int ALTERNATE_RATE = 48000;
 	static const int MAX_DURATION = 100;
 	typedef short SAMPLE;
 	static const PaSampleFormat SAMPLE_TYPE = paInt16;
 	typedef struct {
 		int recordingLevel;
+		int actualRate;
 		int maxFrames;
 		SAMPLE *samples;
 		int frameIndex;
@@ -46,16 +49,17 @@ private:
 	PaStream *mStream;
 	RecordData mRecordData;
 	bool mSaving;
+	bool mConverted;
 
 public:
 	Record();
 	~Record();
 	bool initialised() { return mInit; };
 	bool setLevel(int level);
-	bool startStream();
+	bool startStream(int soundWanted, int silenceWanted);
 	bool stopStream();
-	bool isStarted() { return (mRecordData.frameIndex > 0); };
-	bool isActive() { Pa_IsStreamActive(mStream); };
+	bool isActive() { return Pa_IsStreamActive(mStream); };
+	bool isTriggered() { return mRecordData.soundTriggered; };
 	bool saveWAV(const char *filename, Audio *audio);
 	bool playWAV(Audio *audio, double now);
 };

@@ -1,26 +1,26 @@
 # This script plays some sounds. It does not require any
 # GPIO pins to be connected.
 
-:Main
+activity Main
 use_addon Pibrella
 # First play the sounds separately
-start_wait Left
-start_wait Right
-start_wait Centre
+do_activity Left
+do_activity Right
+do_activity Centre
 
 # Now play the sounds together
-start Left
-start_wait Right
-start Left
-start_wait Right
-start Left
-start_wait Right
+start_activity Left
+do_activity Right
+start_activity Left
+do_activity Right
+start_activity Left
+do_activity Right
 
-:Left
+activity Left
 play_sound sounds/left.wav
 
-:Right
+activity Right
 play_sound sounds/right.wav
 
-:Centre
+activity Centre
 play_sound sounds/centre.wav

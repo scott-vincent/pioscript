@@ -1,19 +1,25 @@
-Usage
-=====
+Command-Line Usage
+==================
 To run a script:
    pioscript <script_file>
 
-To get help including the list of valid script commands:
+To get help when using a Pibrella:
+	pioscript -help
+
+To get advanced help:
    pioscript -morehelp
+
+To get the list of valid script commands:
+   pioscript -commands
 
 A test script is included that doesn't require any GPIO pins
 to be connected:
    pioscript scripts/sound.pioscript
 
 If you don't hear any sound try running:
-   ./resetAudio.sh hdmi
+   ./reset_audio hdmi
 or
-   ./resetAudio.sh analog
+   ./reset_audio analog
 and then try again.
 
 The following scripts are also included but view the script before

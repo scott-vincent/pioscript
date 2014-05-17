@@ -1,5 +1,5 @@
 
-Pioscript v2.1    Scott Vincent    May 2014    email: scottvincent@yahoo.com
+Pioscript v3.0    Scott Vincent    May 2014    email: scottvincent@yahoo.com
 
 Installation
 ============
@@ -13,22 +13,28 @@ contains the Pibrella example scripts and one contains the scripts for
 non-Pibrella users. To run a script just double-click it. To view or
 change a script, right-click it and select the Leafpad editor.
 
-Usage
-=====
+Command-Line Usage
+==================
 To run a script:
    pioscript <script_file>
 
-To get help including the list of valid script commands:
+To get help when using a Pibrella:
+	pioscript -help
+
+To get advanced help:
    pioscript -morehelp
+
+To get the list of valid script commands:
+   pioscript -commands
 
 A test script is included that doesn't require any GPIO pins
 to be connected:
    pioscript scripts/sound.pioscript
 
 If you don't hear any sound try running:
-   ./resetAudio.sh hdmi
+   ./reset_audio hdmi
 or
-   ./resetAudio.sh analog
+   ./reset_audio analog
 and then try again.
 
 The following scripts are also included but view the script before
@@ -93,24 +99,28 @@ Important Note 2: The sound_buzzer, play_note and play_song commands all use
 hardware PWM so if you use any of these commands you will need to reboot to
 hear sound from the audio jack. It does not affect sound played via HDMI.
 
+For a list of commands type 'pioscript -commands'.
+
+
 Command List
 ============
 
 General
 -------
   # Comment              This is a comment.
-  :main                  Define main activity. This activity is started when
-                         the script first runs.
-  :myjob                 Define a sub-activity.
-  start myjob            Start a sub-activity.
-  start_wait myjob       Start a sub-activity and wait for it to complete.
-  stop myjob             Interrupt and stop a sub-activity.
+  activity Main          Define the 'Main' activity. This is the activity that
+                         is always started when the script first runs.
+  activity My Job        Define another activity.
+  start_activity My Job  Start another activity.
+  do_activity My Job     Start another activity and wait for it to complete.
+  stop_activity My Job   Interrupt and stop another activity.
   wait 1.5               Pause this activity for the specified number of
                          seconds.
   repeat                 Repeat this activity.
-  print My text          Print some text. Useful for debugging scripts.
-  print "  My text"      Use quotes to print leading spaces or blank lines.
-  print Value is $myvar  Print the value of a variable.
+  print "My text"        Print some text. Useful for debugging scripts.
+  print myvar            Print the value of a variable.
+  print "Value 1 is " myvar " and value 2 is " myvar2
+                         Print text and variables together.
   start_sync             Start or reset the global timer. This is useful for
                          synchronising commands across concurrent activities.
                          The current value of the global timer can be obtained
@@ -161,18 +171,21 @@ Sound
 
 GPIO
 ----
-  wait_press 1           Wait for switch 1 to be pressed.
+  wait_press 1           Wait for switch 1 to be released and then pressed.
                          Note: Internal pull-up resistor will be enabled or
                          internal pull-down resistor if you are using a
                          Pibrella add-on board.
-  wait_release 1         Wait for switch 1 to be released.
+  wait_longpress 1       Wait for switch 1 to be pressed and held for at least
+                         one second.
+  wait_pressed 1         Only wait if switch 1 is not being pressed.
+  wait_released 1        Only wait if switch 1 is being pressed.
   wait_high 1            Wait for input 1 to go high.
   wait_low 1             Wait for input 1 to go low.
   output_high 1          Set output 1 high.
   output_low 1           Set output 1 low.
   read_input 0 1         Uses a combination of input 0 and output 1 to read an
                          analog input such as a photoresistor. The value is
-                         stored in the $input variable. See the 'photosensor'
+                         stored in the 'input' variable. See the 'photosensor'
                          example script for more information.
   output_pwm 1 50        Set output 1 to a PWM value in the range 0 to 100.
   turn_on 1              Same as output_high 1. Use this for LEDs.
@@ -216,42 +229,41 @@ GPIO
 Variables
 ---------
   set a = 1              Creates a variable a and assigns value 1 to it.
-  set b = $a + 1         Creates a variable b and uses an expression to assign
+  set b = a + 1          Creates a variable b and uses an expression to assign
                          a value to it.
-  set a = $a + 1         Increments a variable by 1.
-  set $myvar = -2        A variable name can be any length. The $ is optional
-                         on the left of an assignment but must be used in an
-                         expression to distinguish variables from functions.
+  set a = a + 1          Increments a variable by 1.
+  set myvar2 = -2        A variable name can be any length and must start with
+                         a letter.
   set a[1] = 2           Subscripts (arrays) are supported and don't have to be
                          sequential.
-  set a[$b+1] = 2        An expression can be used for the subscript.
+  set a[b+1] = 2         An expression can be used for the subscript.
 
 Special Variables
 -----------------
-  print $input           The $input variable stores the last value read by the
+  print input            The input variable stores the last value read by the
                          read_input command.
 
 Operators
 ---------
-  set a = ($b - 1) * $c  Any of the mathematical operators +, -, *, / may be
+  set a = (b - 1) * c    Any of the mathematical operators +, -, *, / may be
                          used in an expression.
-  set a = ($b > $c) and not $d
+  set a = (b > c) and not d
                          Any of the logical operators =, <, >, !=, <=, >=, and,
                          or, not may be used in an expression.
-  set a = ($b = true)    A logical expression evaluates to 1 (true) or 0
+  set a = (b = true)     A logical expression evaluates to 1 (true) or 0
                          false). You may also use the constants true and false.
-  set a = 3 + ($b >= $c) An expression can contain any mix of mathematical and
+  set a = 3 + (b >= c)   An expression can contain any mix of mathematical and
                          logical operators.
 
 Functions
 ---------
   sync()                 Returns the current value of the global timer.
-  int($a)                Rounds $a down to its integer value.
-  trunc($a)              Same as int function.
-  round($a)              Rounds $a up or down to its nearest integer value.
+  int(val)               Rounds val down to its integer value.
+  trunc(val)             Same as int function.
+  round(val)             Rounds val up or down to its nearest integer value.
   rand()                 Returns a random number in the range 0 to 0.999.
-  set a = 1 + int(10 * rand())
-                         Sets $a to a random integer between 1 and 10.
+  set val = 1 + int(10 * rand())
+                         Sets val to a random integer between 1 and 10.
   playing(mywavfile)     Returns true if the sound is currently playing.
   recording()            Returns true if a recording is currently in progress.
   pressed(0)             Returns true if the specified button is currently
@@ -262,16 +274,17 @@ Functions
 
 Conditionals
 ------------
-  if $winner             Only executes the commands between if and else/end_if
-                         when the expression evaluates to true.
+  if val = 1             Only executes the commands between if and
+                         elif/else/endif when the expression evaluates to true.
+  else if val = 2        You can have more than one condition in an if block.
   else                   Only executes the commands between else and end_if when
                          the expression evaluates to false. The else command is
                          optional within an if block.
   end_if                 Marks the end of an if block.
-  while $a != 1          Continuously executes the commands between while and
+  while a != 1           Continuously executes the commands between while and
                          end_while until the expression evaluates to false.
   end_while              Marks the end of a while block.
-  for $a=0 ($a < 10) $a=$a+1
+  for a=0 (a < 10) a=a+1
                          The for command expects exactly 3 parameters. If a
                          parameter includes spaces you must enclose it in
                          brackets. Param 1 is a set command to execute on intial

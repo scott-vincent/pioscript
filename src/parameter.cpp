@@ -45,7 +45,7 @@ bool Parameter::getVariable()
 
 	bool success = Variable::get(mName, NULL, mValue);
 	if (!success){
-		fprintf(stderr, "Variable %s is undefined. For a list use $var[i].\n",
+		fprintf(stderr, "Variable %s is undefined.\n",
 				Variable::errName);
 	}
 	return success;
@@ -59,96 +59,88 @@ void Parameter::getFullStrValue(char *strValue)
 {
 	const char *srcPos = mStrValue.c_str();
 	char *destPos = strValue;
+	const char *endPos;
+	int len;
 
 	while (true){
-		const char *startPos = strchr(srcPos, '$');
-		if (!startPos){
-			strcpy(destPos, srcPos);
+		while (*srcPos == ' ')
+			*srcPos++;
+
+		if (*srcPos == '\0'){
+			*destPos = '\0';
 			return;
 		}
 
-		if (startPos > srcPos){
-			int len = startPos - srcPos;
-			strncpy(destPos, srcPos, len);
-			srcPos = startPos;
-			destPos += len;
-		}
+		// Is it a literal?
+		if (*srcPos == '"'){
+			srcPos++;
 
-		startPos++;
-		const char *endPos;
-		char varName[256];
-		if (*startPos == '{'){
-			startPos++;
-			endPos = strchr(startPos, '}');
+			// If no matching quote just take whole string
+			endPos = strchr(srcPos, '"');
 			if (!endPos){
 				strcpy(destPos, srcPos);
 				return;
 			}
-			int len = endPos - startPos;
-			strncpy(varName, startPos, len);
-			varName[len] = '\0';
+
+			len = endPos - srcPos;
+			strncpy(destPos, srcPos, len);
+			destPos += len;
+			srcPos = endPos + 1;
+			continue;
+		}
+
+		// Found a variable
+		char varName[256];
+		endPos = srcPos;
+		int subCount = 0;
+		while (*endPos != '\0'){
+			if (*endPos == ' ' && subCount == 0)
+				break;
+
+			if (*endPos == '[')
+				subCount++;
+			else if (*endPos == ']' && subCount > 0)
+				subCount--;
+
 			endPos++;
 		}
-		else {
-			endPos = startPos;
-			bool inSub = false;
-			while (*endPos != '\0'){
-				if (*endPos == '[')
-					inSub = true;
 
-				if (!inSub && !isalnum(*endPos))
-					break;
+		int len = endPos - srcPos;
+		strncpy(varName, srcPos, len);
+		varName[len] = '\0';
+		srcPos = endPos;
 
-				if (*endPos == ']')
-					inSub = false;
-
-				endPos++;
-			}
-
-			int len = endPos - startPos;
-			endPos = startPos + len;
-
-			strncpy(varName, startPos, len);
-			varName[len] = '\0';
+		// Is it a single variable?
+		char strVal[256];
+		if (Variable::get(varName, NULL, strVal)){
+			strcpy(destPos, strVal);
+			destPos += strlen(strVal);
+			continue;
 		}
 
-		if (*varName != '\0'){
-			char strVal[256];
-
-			// Is it a single variable?
-			if (Variable::get(varName, NULL, strVal)){
-				strcpy(destPos, strVal);
-				destPos += strlen(strVal);
-				srcPos = endPos;
-				continue;
-			}
-
-			// Is it a list variable?
-			int index = 0;
-			char nextVarName[256];
-			sprintf(nextVarName, "%s[%d]", varName, index);
-			while (Variable::get(nextVarName, NULL, strVal)){
-				if (index > 0){
-					*destPos = ',';
-					destPos++;
-				}
-
-				strcpy(destPos, strVal);
-				destPos += strlen(strVal);
-				index++;
-				sprintf(nextVarName, "%s[%d]", varName, index);
-			}
-
+		// Is it a list variable?
+		int index = 0;
+		char nextVarName[256];
+		sprintf(nextVarName, "%s[%d]", varName, index);
+		while (Variable::get(nextVarName, NULL, strVal)){
 			if (index > 0){
-				srcPos = endPos;
-				continue;
+				*destPos = ',';
+				destPos++;
 			}
+
+			strcpy(destPos, strVal);
+			destPos += strlen(strVal);
+			index++;
+			sprintf(nextVarName, "%s[%d]", varName, index);
 		}
+
+		if (index > 0)
+			continue;
 
 		// Variable not defined
-		int len = endPos - srcPos;
-		strncpy(destPos, srcPos, len);
-		destPos += len;
-		srcPos = endPos;
+		strcpy(destPos, varName);
+		destPos += strlen(varName);
+		strcpy(destPos, "{undefined variable} ");
+		destPos += 21;
 	}
 }

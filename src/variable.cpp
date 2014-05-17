@@ -199,9 +199,6 @@ bool Variable::get(char *name, void **funcObjects, char *strValue)
  */
 bool Variable::getFullName(const char *name, void **funcObjects, char *fullName)
 {
-	if (*name == '$')
-		name++;
-
 	// If subscript found make sure we have matching square brackets
 	// and evaluate the contents to get the value.
 	const char *startPos = strchr(name, '[');
@@ -497,25 +494,6 @@ const char *Variable::getToken(const char *pos, void **funcObjects, bool expecti
 	strncpy(operand, startPos, len);
 	operand[len] = '\0';
 
-	// Is it a variable?
-	if (*operand == '$'){
-		// Is it a valid variable?
-		if (!Variable::get(operand, funcObjects, value)){
-			fprintf(stderr, "Variable %s is undefined. For a list use $var[i].\n", Variable::errName);
-			return NULL;
-		}
-		if (negativeVal)
-			value = -value;
-
-		if (logicalNot){
-			if (value == 0)
-				value = 1000;
-			else
-				value = 0;
-		}
-		return pos;
-	}
-
 	// Is it a function?
 	char *funcExpression = strchr(operand, '(');
 	if (funcExpression){
@@ -574,7 +552,9 @@ const char *Variable::getToken(const char *pos, void **funcObjects, bool expecti
 			else
 				value = 0;
 		}
-		else if (strcasecmp(func, "recording") == 0){
+		else if (strcasecmp(func, "recording") == 0
+			|| strcasecmp(func, "listening") == 0)
+		{
 			if (Engine::recorder->isActive())
 				value = 1000;
 			else
@@ -610,6 +590,25 @@ const char *Variable::getToken(const char *pos, void **funcObjects, bool expecti
 		}
 		else {
 			fprintf(stderr, "Unknown function %s\n", func);
+			return NULL;
+		}
+		if (negativeVal)
+			value = -value;
+
+		if (logicalNot){
+			if (value == 0)
+				value = 1000;
+			else
+				value = 0;
+		}
+		return pos;
+	}
+
+	// Is it a variable?
+	if (isalpha(*operand)){
+		// Is it a valid variable?
+		if (!Variable::get(operand, funcObjects, value)){
+			fprintf(stderr, "Variable %s is undefined.\n", Variable::errName);
 			return NULL;
 		}
 		if (negativeVal)

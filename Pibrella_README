@@ -1,5 +1,5 @@
 
-Pioscript v2.1    Scott Vincent    May 2014    email: scottvincent@yahoo.com
+Pioscript v3.0    Scott Vincent    May 2014    email: scottvincent@yahoo.com
 
 Command List
 ============
@@ -11,16 +11,19 @@ General
      Pibrella Inputs: Button, InputA, InputB, InputC, InputD.
      Pibrella Outputs: Red, Amber, Green, OutputE, OutputF, OutputG, OutputH.
   #Comment               This is a comment.
-  :main                  The main activity runs when the script starts.
   wait 1.5               Wait for 1.5 seconds.
-  repeat                 Repeat an activity.
-  print My text          Print some text.
-  print Value is $myvar  Print a variable.
+  print "My text"        Print some text.
+  print myvar            Print a variable.
+  print "Value 1 is " myvar " and value 2 is " myvar2
+                         Print text and variables together.
+  activity Main          Define the 'Main' activity. This is the activity that
+                         is always started when the script first runs.
+  activity My Job        Define another activity.
+  start_activity My Job  Start another activity.
+  do_activity My Job     Start another activity and wait for it to complete.
+  stop_activity My Job   Interrupt and stop another activity.
+  repeat                 Repeat this activity.
   exit                   Stop all activities and quit.
-  :My Activity           Define an activity.
-  start My Activity      Start an activity.
-  start_wait My Activity Start an activity and wait for it to complete.
-  stop My Activity       Stop an activity.
 
 Pibrella Buzzer
 ---------------
@@ -41,8 +44,10 @@ Sound
 
 Input/Output
 ------------
-  wait_press Button      Wait for Button to be pressed.
-  wait_release Button    Wait for Button to be released.
+  wait_press Button      Wait for Button to be released and then pressed.
+  wait_longpress Button  Wait for Button to be pressed and held for one second.
+  wait_pressed Button    Only wait if Button is not being pressed.
+  wait_released Button   Only wait if Button is being pressed.
   turn_on Red            Turn on the Red LED.
   turn_off Red           Turn off the Red LED.
   flash Amber 1.5        Flash the Amber LED every 1.5 seconds.
@@ -52,31 +57,31 @@ Input/Output
   set_brightness Red 50  Set the Red LED brightness to 50%.
   read_input InputA OutputE
                          Read a photo-resistor on InputA and OutputE.
-  print $input           Show the value read from the photo-resistor.
+  print input            Show the value read from the photo-resistor.
 
 Variables
 ---------
-  set $val = 1           Set a variable to a value.
-  set $val = $val + 1    Add 1 to a variable.
-  set $val[1] = 2        Create a set of variables.
-  set $val[2] = 5
+  set val = 1            Set a variable to a value.
+  set val = val + 1      Add 1 to a variable.
+  set val[1] = 2         Create a set of variables.
+  set val[2] = 5
 
 Operators
 ---------
-  set $val = 1 + 2 * 3 / 4
+  set val = 1 + 2 * 3 / 4
                          Use the mathematical operators +, -, *, /.
-  set $val = ($score > $high_score) AND NOT $lost
+  set val = (score > high_score) AND NOT lost
                          Use the logical operators =, <, >, !=, <=, >=, AND, OR.
-  set $finished = TRUE   You can also use TRUE and FALSE instead of 1 and 0.
+  set finished = TRUE    You can also use TRUE and FALSE instead of 1 and 0.
 
 Functions
 ---------
-  int($val)              Rounds $val down to the nearest value.
-  trunc($val)            Same as int function.
-  round($val)            Rounds $val up or down to the nearest value.
+  int(val)               Rounds val down to the nearest value.
+  trunc(val)             Same as int function.
+  round(val)             Rounds val up or down to the nearest value.
   rand()                 Returns a random number in the range 0 to 0.999.
-  set $val = 1 + int(5 * rand())
-                         Sets $val to a random value between 1 and 5.
+  set val = 1 + int(5 * rand())
+                         Sets val to a random value between 1 and 5.
   playing(mywavfile)     Returns TRUE if the sound is currently playing.
   recording()            Returns TRUE if a recording is currently in progress.
   pressed(Button)        Returns TRUE if Button is currently being pressed.
@@ -84,15 +89,16 @@ Functions
 
 Branching
 ---------
-  if $val = 1            Only do the following commands if expression is TRUE.
+  if val = 1             Only do the following commands if expression is TRUE.
+  else if val = 2        You can have more than one condition in an if block.
   else                   Only do the following commands if expression is FALSE.
   end_if                 Marks the end of an if block.
-  while $val < 10        Keep doing the following commands until the expression
+  while val < 10         Keep doing the following commands until the expression
                          is FALSE.
   end_while              Marks the end of a while block.
-  for ($a = 0) ($a < 10) ($a = $a + 1)
-                         Set $a to 0 and do the following commands. Then add 1
-                         to $a and do the commands again. Keep repeating until
+  for (a = 0) (a < 10) (a = a + 1)
+                         Set a to 0 and do the following commands. Then add 1
+                         to a and do the commands again. Keep repeating until
                          the expression is FALSE.
   end_for                Marks the end of a for block.
 ========================================

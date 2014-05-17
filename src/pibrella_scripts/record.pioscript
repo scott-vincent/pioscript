@@ -1,0 +1,24 @@
+# Press the Button to record 10 seconds of sound. The Red LED
+# will light up when recording is in progress. When the
+# recording has completed it will be played back.
+#
+# Press and hold the Button for more than 1 second to exit.
+
+use_addon Pibrella
+start_activity Record Sound
+wait_longpress Button
+stop_recording
+turn_off *
+exit
+
+activity Record Sound
+print
+print "Press the Button to record 10 seconds of sound"
+print "or press and hold the Button to exit."
+wait_press Button
+turn_on Red
+record_sound 10
+turn_off Red
+print "Playing back your recording..."
+play_recording
+repeat

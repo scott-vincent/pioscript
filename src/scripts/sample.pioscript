@@ -9,21 +9,20 @@
 #
 # The script exits when switch 2 is pressed.
 
-:Main
-start Sound 1
-start Sound 2
+start_activity Sound 1
+start_activity Sound 2
 wait_press 2
 output_low *
 exit
 
-:Sound 1
+activity Sound 1
 wait_press 0
 output_high 3
 play_sound sounds/left.wav
 output_low 3
 repeat
 
-:Sound 2
+activity Sound 2
 wait_press 1
 output_high 4
 play_sound sounds/right.wav

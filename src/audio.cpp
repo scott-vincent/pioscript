@@ -100,8 +100,10 @@ Audio::Audio(const char *wavfile, int lineNum)
 	mChannel = -1;
 
 	if (!mInit){
+		if (!init())
+			return;
+
 		mUsingAudio = true;
-		init();
 	}
 
 	if (access(wavfile, 0) == 0){
@@ -248,12 +250,11 @@ bool Audio::isPlaying(double now)
 				msgDisplayed = true;
 			}
 			mHWFail = true;
-			playing = false;
+			Mix_HaltChannel(mChannel);
 		}
 	}
-	else {
+	else
 		mStartTime = 0;
-	}
 
 	return playing;
 }

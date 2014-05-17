@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
 		printf("Usage: pioscript <script_file>\n");
 		printf("Type 'pioscript -help' for help when using the Pibrella\n");
 		printf("Type 'pioscript -morehelp' for advanced help\n");
+		printf("Type 'pioscript -commands' for a list of commands\n");
 		return 1;
 	}
 
@@ -33,6 +34,10 @@ int main(int argc, char *argv[])
 	}
 	else if (strcasecmp(argv[1], "-morehelp") == 0){
 		Command::reportAdvanced();
+		return 1;
+	}
+	else if (strcasecmp(argv[1], "-commands") == 0){
+		Command::reportCommands();
 		return 1;
 	}
 

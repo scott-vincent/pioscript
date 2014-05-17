@@ -87,6 +87,8 @@ Command::Command(char *name, int _lineNum, char *_lineStr)
 		type = Sound_Buzzer;
 	else if (strcasecmp(name, "wait_press") == 0)
 		type = Wait_Press;
+	else if (strcasecmp(name, "wait_longpress") == 0)
+		type = Wait_LongPress;
 	else if (strcasecmp(name, "wait_pressed") == 0)
 		type = Wait_Pressed;
 	else if (strcasecmp(name, "wait_released") == 0)
@@ -135,12 +137,12 @@ Command::Command(char *name, int _lineNum, char *_lineStr)
 		type = Stop_Pwm;
 	else if (strcasecmp(name, "flash") == 0)
 		type = Flash;
-	else if (strcasecmp(name, "start") == 0)
-		type = Start;
-	else if (strcasecmp(name, "start_wait") == 0)
-		type = Start_Wait;
-	else if (strcasecmp(name, "stop") == 0)
-		type = Stop;
+	else if (strcasecmp(name, "start_activity") == 0)
+		type = Start_Activity;
+	else if (strcasecmp(name, "do_activity") == 0)
+		type = Do_Activity;
+	else if (strcasecmp(name, "stop_activity") == 0)
+		type = Stop_Activity;
 	else if (strcasecmp(name, "wait") == 0)
 		type = Wait;
 	else if (strcasecmp(name, "repeat") == 0)
@@ -157,6 +159,8 @@ Command::Command(char *name, int _lineNum, char *_lineStr)
 		type = Set;
 	else if (strcasecmp(name, "if") == 0)
 		type = If;
+	else if (strcasecmp(name, "else_if") == 0)
+		type = Else_If;
 	else if (strcasecmp(name, "else") == 0)
 		type = Else;
 	else if (strcasecmp(name, "end_if") == 0)
@@ -188,7 +192,8 @@ Command::Command(char *name, int _lineNum, char *_lineStr)
  */
 bool Command::isMethod()
 {
-	return (type == Start || type == Start_Wait || type == Stop);
+	return (type == Start_Activity || type == Do_Activity
+		|| type == Stop_Activity);
 }
 
 
@@ -230,8 +235,8 @@ bool Command::isGpio()
  */
 bool Command::isGpioSwitch()
 {
-	return (type == Wait_Press || type == Wait_Pressed
-		 || type == Wait_Released);
+	return (type == Wait_Press || type == Wait_LongPress
+		|| type == Wait_Pressed || type == Wait_Released);
 }
 
 
@@ -320,8 +325,8 @@ bool Command::isStartNest()
  */
 bool Command::isEndNest()
 {
-	return (type == Else || type == End_If || type == End_While
-		|| type == End_For);
+	return (type == Else_If || type == Else || type == End_If
+		|| type == End_While || type == End_For);
 }
 
 
@@ -333,12 +338,21 @@ bool Command::validateParams(char *params)
 	// Parse params
 	char *pos = params;
 
+	// Convert 'Else If' to Else_If
+	if (type == Else && strncasecmp(pos, "if ", 3) == 0){
+		type = Else_If;
+		pos += 3;
+		while (*pos == ' ')
+			pos++;
+	}
+
 	// param 7 is used for range end pin
 	param[7].setValue(-1);
 
 	switch (type) {
 
 		case Wait_Press:
+		case Wait_LongPress:
 		case Wait_Pressed:
 		case Wait_Released:
 		case Wait_High:
@@ -541,9 +555,9 @@ bool Command::validateParams(char *params)
 		case Resume:
 		case Stop_Sound:
 		case Save_Recording:
-		case Start:
-		case Stop:
-		case Start_Wait:
+		case Start_Activity:
+		case Stop_Activity:
+		case Do_Activity:
 		case Print:
 		case Use_Addon:
 			// Expect 1 string
@@ -560,6 +574,7 @@ bool Command::validateParams(char *params)
 			break;
 
 		case If:
+		case Else_If:
 		case While:
 			// Expect 1 string
 			if (!(pos = addStrParam(0, pos)))
@@ -652,9 +667,8 @@ char *Command::addParam(int num, char *pos)
 		return NULL;
 	}
 
-	bool isVar = (*pos == '$');
-	if (isVar){
-		pos++;
+	// Is it a variable?
+	if (isalpha(*pos)){
 		char *startPos = pos;
 		while (*pos != ' ' && *pos != '\0')
 			pos++;
@@ -692,6 +706,13 @@ char *Command::addStrParam(int num, char *params)
 	while (*pos == ' ')
 		pos++;
 
+	if (type == Print){
+		// Just store the whole thing
+		nameParam.setStrValue(pos);
+		pos += strlen(pos);
+		return pos;	
+	}
+
 	if (*pos == '"'){
 		// Find matching quote
 		pos++;
@@ -709,8 +730,7 @@ char *Command::addStrParam(int num, char *params)
 		return pos;
 	}
 
-	// Allow print to have no param to print a blank line
-	if (*pos == '\0' && type != Print){
+	if (*pos == '\0'){
 		fprintf(stderr, "Expected more parameters\n");
 		return NULL;
 	}
@@ -1320,9 +1340,9 @@ char *Command::parseDecimal(char *pos, int param, int &value)
 	// No other chars allowed
 	if (*pos != ' ' && *pos != '\0'){
 		if (param == -1)
-			fprintf(stderr, "Expression contains unexpected characters. Variable should start with $.\n");
+			fprintf(stderr, "Expression contains unexpected characters.\n");
 		else if (param < 7)
-			fprintf(stderr, "Parameter %d contains unexpected characters. Variable should start with $.\n", param+1);
+			fprintf(stderr, "Parameter %d contains unexpected characters.\n", param+1);
 		else
 			fprintf(stderr, "Parameter contains unexpected characters\n");
 		return NULL;
@@ -1375,6 +1395,7 @@ bool Command::validParam(int num)
 	if (num != -1){
 		switch (type){
 			case Wait_Press:
+			case Wait_LongPress:
 			case Wait_Pressed:
 			case Wait_Released:
 			case Wait_High:
@@ -1675,13 +1696,17 @@ char *Command::paramToStr(int num)
         sprintf(strValue, "%d", value / 1000);
     }
     else {
+		int whole = value / 1000;
 		int decimal;
 		if (value < 0)
 			decimal = -value % 1000;
 		else
 			decimal = value % 1000;
 
-        sprintf(strValue, "%d.%03d", value / 1000, decimal);
+		if (whole == 0 && value < 0)
+        	sprintf(strValue, "-%d.%03d", whole, decimal);
+		else
+        	sprintf(strValue, "%d.%03d", whole, decimal);
 
         // Remove trailing zeroes
         while (strValue[strlen(strValue)-1] == '0')
@@ -1698,7 +1723,7 @@ char *Command::paramToStr(int num)
 void Command::reportAdvanced()
 {
 	printf("\n");
-	printf("Pioscript v2.1    Scott Vincent    May 2014    email: scottvincent@yahoo.com\n");
+	printf("Pioscript v3.0    Scott Vincent    May 2014    email: scottvincent@yahoo.com\n");
 	printf("\n");
 	printf("GPIO input and output pins should be specified using wiringPi numbering,\n");
 	printf("i.e. pin 0 is physical pin 11 on the Raspberry Pi connector.\n");
@@ -1743,24 +1768,34 @@ void Command::reportAdvanced()
 	printf("hardware PWM so if you use any of these commands you will need to reboot to\n");
 	printf("hear sound from the audio jack. It does not affect sound played via HDMI.\n");
 	printf("\n");
+	printf("For a list of commands type 'pioscript -commands'.\n");
+}
+
+
+/**
+ *
+ */
+void Command::reportCommands()
+{
 	printf("Command List\n");
 	printf("============\n");
 	printf("\n");
 	printf("General\n");
 	printf("-------\n");
 	printf("  # Comment              This is a comment.\n");
-	printf("  :main                  Define main activity. This activity is started when\n");
-	printf("                         the script first runs.\n");
-	printf("  :myjob                 Define a sub-activity.\n");
-	printf("  start myjob            Start a sub-activity.\n");
-	printf("  start_wait myjob       Start a sub-activity and wait for it to complete.\n");
-	printf("  stop myjob             Interrupt and stop a sub-activity.\n");
+	printf("  activity Main          Define the 'Main' activity. This is the activity that\n");
+	printf("                         is always started when the script first runs.\n");
+	printf("  activity My Job        Define another activity.\n");
+	printf("  start_activity My Job  Start another activity.\n");
+	printf("  do_activity My Job     Start another activity and wait for it to complete.\n");
+	printf("  stop_activity My Job   Interrupt and stop another activity.\n");
 	printf("  wait 1.5               Pause this activity for the specified number of\n");
 	printf("                         seconds.\n");
 	printf("  repeat                 Repeat this activity.\n");
-	printf("  print My text          Print some text. Useful for debugging scripts.\n");
-	printf("  print \"  My text\"      Use quotes to print leading spaces or blank lines.\n");
-	printf("  print Value is $myvar  Print the value of a variable.\n");
+	printf("  print \"My text\"        Print some text. Useful for debugging scripts.\n");
+	printf("  print myvar            Print the value of a variable.\n");
+	printf("  print \"Value 1 is \" myvar \" and value 2 is \" myvar2\n");
+	printf("                         Print text and variables together.\n");
 	printf("  start_sync             Start or reset the global timer. This is useful for\n");
 	printf("                         synchronising commands across concurrent activities.\n");
 	printf("                         The current value of the global timer can be obtained\n");
@@ -1815,6 +1850,8 @@ void Command::reportAdvanced()
 	printf("                         Note: Internal pull-up resistor will be enabled or\n");
 	printf("                         internal pull-down resistor if you are using a\n");
 	printf("                         Pibrella add-on board.\n");
+	printf("  wait_longpress 1       Wait for switch 1 to be pressed and held for at least\n");
+	printf("                         one second.\n");
 	printf("  wait_pressed 1         Only wait if switch 1 is not being pressed.\n");
 	printf("  wait_released 1        Only wait if switch 1 is being pressed.\n");
 	printf("  wait_high 1            Wait for input 1 to go high.\n");
@@ -1823,7 +1860,7 @@ void Command::reportAdvanced()
 	printf("  output_low 1           Set output 1 low.\n");
 	printf("  read_input 0 1         Uses a combination of input 0 and output 1 to read an\n");
 	printf("                         analog input such as a photoresistor. The value is\n");
-	printf("                         stored in the $input variable. See the 'photosensor'\n");
+	printf("                         stored in the 'input' variable. See the 'photosensor'\n");
 	printf("                         example script for more information.\n");
 	printf("  output_pwm 1 50        Set output 1 to a PWM value in the range 0 to 100.\n");
 	printf("  turn_on 1              Same as output_high 1. Use this for LEDs.\n");
@@ -1867,42 +1904,41 @@ void Command::reportAdvanced()
 	printf("Variables\n");
 	printf("---------\n");
 	printf("  set a = 1              Creates a variable a and assigns value 1 to it.\n");
-	printf("  set b = $a + 1         Creates a variable b and uses an expression to assign\n");
+	printf("  set b = a + 1          Creates a variable b and uses an expression to assign\n");
 	printf("                         a value to it.\n");
-	printf("  set a = $a + 1         Increments a variable by 1.\n");
-	printf("  set $myvar = -2        A variable name can be any length. The $ is optional\n");
-	printf("                         on the left of an assignment but must be used in an\n");
-	printf("                         expression to distinguish variables from functions.\n");
+	printf("  set a = a + 1          Increments a variable by 1.\n");
+	printf("  set myvar2 = -2        A variable name can be any length and must start with\n");
+	printf("                         a letter.\n");
 	printf("  set a[1] = 2           Subscripts (arrays) are supported and don't have to be\n");
 	printf("                         sequential.\n");
-	printf("  set a[$b+1] = 2        An expression can be used for the subscript.\n");
+	printf("  set a[b+1] = 2         An expression can be used for the subscript.\n");
 	printf("\n");
 	printf("Special Variables\n");
 	printf("-----------------\n");
-	printf("  print $input           The $input variable stores the last value read by the\n");
+	printf("  print input            The input variable stores the last value read by the\n");
 	printf("                         read_input command.\n");
 	printf("\n");
 	printf("Operators\n");
 	printf("---------\n");
-	printf("  set a = ($b - 1) * $c  Any of the mathematical operators +, -, *, / may be\n");
+	printf("  set a = (b - 1) * c    Any of the mathematical operators +, -, *, / may be\n");
 	printf("                         used in an expression.\n");
-	printf("  set a = ($b > $c) and not $d\n");
+	printf("  set a = (b > c) and not d\n");
 	printf("                         Any of the logical operators =, <, >, !=, <=, >=, and,\n");
 	printf("                         or, not may be used in an expression.\n");
-	printf("  set a = ($b = true)    A logical expression evaluates to 1 (true) or 0\n");
+	printf("  set a = (b = true)     A logical expression evaluates to 1 (true) or 0\n");
 	printf("                         false). You may also use the constants true and false.\n");
-	printf("  set a = 3 + ($b >= $c) An expression can contain any mix of mathematical and\n");
+	printf("  set a = 3 + (b >= c)   An expression can contain any mix of mathematical and\n");
 	printf("                         logical operators.\n");
 	printf("\n");
 	printf("Functions\n");
 	printf("---------\n");
 	printf("  sync()                 Returns the current value of the global timer.\n");
-	printf("  int($a)                Rounds $a down to its integer value.\n");
-	printf("  trunc($a)              Same as int function.\n");
-	printf("  round($a)              Rounds $a up or down to its nearest integer value.\n");
+	printf("  int(val)               Rounds val down to its integer value.\n");
+	printf("  trunc(val)             Same as int function.\n");
+	printf("  round(val)             Rounds val up or down to its nearest integer value.\n");
 	printf("  rand()                 Returns a random number in the range 0 to 0.999.\n");
-	printf("  set a = 1 + int(10 * rand())\n");
-	printf("                         Sets $a to a random integer between 1 and 10.\n");
+	printf("  set val = 1 + int(10 * rand())\n");
+	printf("                         Sets val to a random integer between 1 and 10.\n");
 	printf("  playing(mywavfile)     Returns true if the sound is currently playing.\n");
 	printf("  recording()            Returns true if a recording is currently in progress.\n");
 	printf("  pressed(0)             Returns true if the specified button is currently\n");
@@ -1913,16 +1949,17 @@ void Command::reportAdvanced()
 	printf("\n");
 	printf("Conditionals\n");
 	printf("------------\n");
-	printf("  if $winner             Only executes the commands between if and else/end_if\n");
-	printf("                         when the expression evaluates to true.\n");
+	printf("  if val = 1             Only executes the commands between if and\n");
+	printf("                         elif/else/endif when the expression evaluates to true.\n");
+	printf("  else if val = 2        You can have more than one condition in an if block.\n");
 	printf("  else                   Only executes the commands between else and end_if when\n");
 	printf("                         the expression evaluates to false. The else command is\n");
 	printf("                         optional within an if block.\n");
 	printf("  end_if                 Marks the end of an if block.\n");
-	printf("  while $a != 1          Continuously executes the commands between while and\n");
+	printf("  while a != 1           Continuously executes the commands between while and\n");
 	printf("                         end_while until the expression evaluates to false.\n");
 	printf("  end_while              Marks the end of a while block.\n");
-	printf("  for $a=0 ($a < 10) $a=$a+1\n");
+	printf("  for a=0 (a < 10) a=a+1\n");
 	printf("                         The for command expects exactly 3 parameters. If a\n");
 	printf("                         parameter includes spaces you must enclose it in\n");
 	printf("                         brackets. Param 1 is a set command to execute on intial\n");
@@ -1948,7 +1985,7 @@ void Command::reportAdvanced()
 void Command::reportPibrella()
 {
 	printf("\n");
-	printf("Pioscript v2.1    Scott Vincent    May 2014    email: scottvincent@yahoo.com\n");
+	printf("Pioscript v3.0    Scott Vincent    May 2014    email: scottvincent@yahoo.com\n");
 	printf("\n");
 	printf("Command List\n");
 	printf("============\n");
@@ -1960,16 +1997,19 @@ void Command::reportPibrella()
 	printf("     Pibrella Inputs: Button, InputA, InputB, InputC, InputD.\n");
 	printf("     Pibrella Outputs: Red, Amber, Green, OutputE, OutputF, OutputG, OutputH.\n");
 	printf("  #Comment               This is a comment.\n");
-	printf("  :main                  The main activity runs when the script starts.\n");
 	printf("  wait 1.5               Wait for 1.5 seconds.\n");
-	printf("  repeat                 Repeat an activity.\n");
-	printf("  print My text          Print some text.\n");
-	printf("  print Value is $myvar  Print a variable.\n");
+	printf("  print \"My text\"        Print some text.\n");
+	printf("  print myvar            Print a variable.\n");
+	printf("  print \"Value 1 is \" myvar \" and value 2 is \" myvar2\n");
+	printf("                         Print text and variables together.\n");
+	printf("  activity Main          Define the 'Main' activity. This is the activity that\n");
+	printf("                         is always started when the script first runs.\n");
+	printf("  activity My Job        Define another activity.\n");
+	printf("  start_activity My Job  Start another activity.\n");
+	printf("  do_activity My Job     Start another activity and wait for it to complete.\n");
+	printf("  stop_activity My Job   Interrupt and stop another activity.\n");
+	printf("  repeat                 Repeat this activity.\n");
 	printf("  exit                   Stop all activities and quit.\n");
-	printf("  :My Activity           Define an activity.\n");
-	printf("  start My Activity      Start an activity.\n");
-	printf("  start_wait My Activity Start an activity and wait for it to complete.\n");
-	printf("  stop My Activity       Stop an activity.\n");
 	printf("\n");
 	printf("Pibrella Buzzer\n");
 	printf("---------------\n");
@@ -1991,6 +2031,7 @@ void Command::reportPibrella()
 	printf("Input/Output\n");
 	printf("------------\n");
 	printf("  wait_press Button      Wait for Button to be released and then pressed.\n");
+	printf("  wait_longpress Button  Wait for Button to be pressed and held for one second.\n");
 	printf("  wait_pressed Button    Only wait if Button is not being pressed.\n");
 	printf("  wait_released Button   Only wait if Button is being pressed.\n");
 	printf("  turn_on Red            Turn on the Red LED.\n");
@@ -2002,31 +2043,31 @@ void Command::reportPibrella()
 	printf("  set_brightness Red 50  Set the Red LED brightness to 50%%.\n");
 	printf("  read_input InputA OutputE\n");
 	printf("                         Read a photo-resistor on InputA and OutputE.\n");
-	printf("  print $input           Show the value read from the photo-resistor.\n");
+	printf("  print input            Show the value read from the photo-resistor.\n");
 	printf("\n");
 	printf("Variables\n");
 	printf("---------\n");
-	printf("  set $val = 1           Set a variable to a value.\n");
-	printf("  set $val = $val + 1    Add 1 to a variable.\n");
-	printf("  set $val[1] = 2        Create a set of variables.\n");
-	printf("  set $val[2] = 5\n");
+	printf("  set val = 1            Set a variable to a value.\n");
+	printf("  set val = val + 1      Add 1 to a variable.\n");
+	printf("  set val[1] = 2         Create a set of variables.\n");
+	printf("  set val[2] = 5\n");
 	printf("\n");
 	printf("Operators\n");
 	printf("---------\n");
-	printf("  set $val = 1 + 2 * 3 / 4\n");
+	printf("  set val = 1 + 2 * 3 / 4\n");
 	printf("                         Use the mathematical operators +, -, *, /.\n");
-	printf("  set $val = ($score > $high_score) AND NOT $lost\n");
+	printf("  set val = (score > high_score) AND NOT lost\n");
 	printf("                         Use the logical operators =, <, >, !=, <=, >=, AND, OR.\n");
-	printf("  set $finished = TRUE   You can also use TRUE and FALSE instead of 1 and 0.\n");
+	printf("  set finished = TRUE    You can also use TRUE and FALSE instead of 1 and 0.\n");
 	printf("\n");
 	printf("Functions\n");
 	printf("---------\n");
-	printf("  int($val)              Rounds $val down to the nearest value.\n");
-	printf("  trunc($val)            Same as int function.\n");
-	printf("  round($val)            Rounds $val up or down to the nearest value.\n");
+	printf("  int(val)               Rounds val down to the nearest value.\n");
+	printf("  trunc(val)             Same as int function.\n");
+	printf("  round(val)             Rounds val up or down to the nearest value.\n");
 	printf("  rand()                 Returns a random number in the range 0 to 0.999.\n");
-	printf("  set $val = 1 + int(5 * rand())\n");
-	printf("                         Sets $val to a random value between 1 and 5.\n");
+	printf("  set val = 1 + int(5 * rand())\n");
+	printf("                         Sets val to a random value between 1 and 5.\n");
 	printf("  playing(mywavfile)     Returns TRUE if the sound is currently playing.\n");
 	printf("  recording()            Returns TRUE if a recording is currently in progress.\n");
 	printf("  pressed(Button)        Returns TRUE if Button is currently being pressed.\n");
@@ -2034,15 +2075,16 @@ void Command::reportPibrella()
 	printf("\n");
 	printf("Branching\n");
 	printf("---------\n");
-	printf("  if $val = 1            Only do the following commands if expression is TRUE.\n");
+	printf("  if val = 1             Only do the following commands if expression is TRUE.\n");
+	printf("  else if val = 2        You can have more than one condition in an if block.\n");
 	printf("  else                   Only do the following commands if expression is FALSE.\n");
 	printf("  end_if                 Marks the end of an if block.\n");
-	printf("  while $val < 10        Keep doing the following commands until the expression\n");
+	printf("  while val < 10         Keep doing the following commands until the expression\n");
 	printf("                         is FALSE.\n");
 	printf("  end_while              Marks the end of a while block.\n");
-	printf("  for ($a = 0) ($a < 10) ($a = $a + 1)\n");
-	printf("                         Set $a to 0 and do the following commands. Then add 1\n");
-	printf("                         to $a and do the commands again. Keep repeating until\n");
+	printf("  for (a = 0) (a < 10) (a = a + 1)\n");
+	printf("                         Set a to 0 and do the following commands. Then add 1\n");
+	printf("                         to a and do the commands again. Keep repeating until\n");
 	printf("                         the expression is FALSE.\n");
 	printf("  end_for                Marks the end of a for block.\n");
 	printf("========================================\n");

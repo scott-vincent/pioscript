@@ -1,6 +1,6 @@
-:main
+activity Main
 use_addon Pibrella
-start Button Exit
+start_activity Exit If Button Pressed
 flash Red .3
 flash Amber .5
 flash Green .7
@@ -19,8 +19,8 @@ play_song 1.75 Bb0,.25 A0,.25 Bb0,.5 -,.5 Eb0,.5 Gb0 Eb0,.75 Gb0,.25 Bb0 G0,.75 
 play_song 1.75 E,.25 D#,.25 E,.5 -,.5 G#0,.5 C# B#,.75 B0,.25 Bb0,.25 A0,.25 Bb0,.5 -,.5 Eb0,.5 Gb0 Eb0,.75 Bb0,.25 G0 Eb0,.75 Bb0,.25 G0,2
 exit
 
-:Button Exit
+activity Exit If Button Pressed
 wait_press Button
-stop main
+stop_activity Main
 sound_buzzer .25
 exit

@@ -1,0 +1,15 @@
+# Set volumes to max (default may have been replaced by USB card)
+# Default card may have been replaced
+amixer --card=0 set PCM 100% >/dev/null 2>&1
+amixer --card=0 set Speaker 100% >/dev/null 2>&1
+amixer --card=0 set Mic 100% >/dev/null 2>&1
+
+# Second card may be USB card
+amixer --card=1 set Speaker 100% >/dev/null 2>&1
+amixer --card=1 set Mic 100% >/dev/null 2>&1
+
+# Type 'alsamixer --card=0 --view=playback' to check sound output levels
+# Type 'alsamixer --card=1 --view=capture' to check Mic recording level
+# Note: If the command doesn't work try a different card number
+
+echo "Playback and recording volume levels have been set to 100%"

@@ -13,6 +13,6 @@
 
 :main
 read_input 0 1
-print $input
+print input
 wait .1
 repeat

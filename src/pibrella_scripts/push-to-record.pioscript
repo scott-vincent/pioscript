@@ -1,0 +1,22 @@
+# Press and hold the Button to record some sound. Wait for the Red
+# LED to light up before speaking. When you release the Button the
+# sound will be played back.
+#
+# Press Ctrl-C to quit. The last sound recorded will be saved in
+# the mysound.wav file.
+
+use_addon Pibrella
+print
+print "Press and hold the Button to record some sound."
+print "Don't start speaking until the Red LED is lit."
+wait_pressed Button
+start_recording
+turn_on Red
+wait_released Button
+stop_recording
+turn_off Red
+save_recording sounds/mysound.wav
+print "Your recording has been saved to file sounds/mysound.wav"
+print "Playing back your recording..."
+play_sound sounds/mysound.wav
+repeat

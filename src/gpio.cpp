@@ -380,8 +380,8 @@ void Gpio::monitorInput(int pin, double now)
 		mChangeTime[pin] = now;
 	}
 	else if (mRecentChange[pin]){
-		// Expire buffer after 100ms
-		if ((now - mChangeTime[pin]) > 100)
+		// Expire buffer after 150ms
+		if ((now - mChangeTime[pin]) > 150)
 			mRecentChange[pin] = false;
 	}
 }

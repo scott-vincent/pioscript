@@ -47,6 +47,7 @@ public:
 		Play_Song,
 		Sound_Buzzer,
 		Wait_Press,
+		Wait_LongPress,
 		Wait_Pressed,
 		Wait_Released,
 		Wait_High,
@@ -67,9 +68,9 @@ public:
 		Sine_Pwm_Loop,
 		Stop_Pwm,
 		Flash,
-		Start,
-		Start_Wait,
-		Stop,
+		Start_Activity,
+		Do_Activity,
+		Stop_Activity,
 		Wait,
 		Repeat,
 		Print,
@@ -78,6 +79,7 @@ public:
 		Wait_Sync,
 		Set,
 		If,
+		Else_If,
 		Else,
 		End_If,
 		While,
@@ -100,6 +102,7 @@ public:
 	int nextFuncObject;
 	void *funcObject[9];
 	bool waitRelease;
+	double pressStart;
 
 private:
 	bool mIsValid;
@@ -132,6 +135,7 @@ public:
 	bool validPwmParams();
 	char *paramToStr(int num);
 	static void reportAdvanced();
+	static void reportCommands();
 	static void reportPibrella();
 
 private:

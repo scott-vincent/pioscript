@@ -55,7 +55,7 @@ public:
 	bool isLooping() { return (mActive > 9999); };
 	bool advance(double now);
 	bool exec(Command *command, double now);
-	void jumpForwards(int lineNum);
+	Command *jumpForwards(int lineNum);
 	void jumpBackwards(int lineNum);
 	bool wait(Command *command, double now);
 
