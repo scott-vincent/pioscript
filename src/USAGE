@@ -24,16 +24,22 @@ and then try again.
 
 The following scripts are also included but view the script before
 you run it to see what GPIO connections are required:
-   pioscript scripts/sample.pioscript
-   pioscript scripts/longpress.pioscript
-   pioscript scripts/servo.pioscript
+   pioscript scripts/example.pioscript
+   pioscript scripts/led_brightness.pioscript
+   pioscript scripts/motor_speed.pioscript
    pioscript scripts/photosensor.pioscript
+   pioscript scripts/servo.pioscript
+   pioscript scripts/sound_detector.pioscript
+   pioscript scripts/voice_activated_record.pioscript
 
 The Pibrella add-on board is fully supported. Try the following
 example scripts:
-   pioscript pibrella_scripts/example1.pioscript
-   pioscript pibrella_scripts/example2.pioscript
-   pioscript pibrella_scripts/longpress.pioscript
+   pioscript pibrella_scripts/example.pioscript
+   pioscript pibrella_scripts/led_brightness.pioscript
+   pioscript pibrella_scripts/motor_speed.pioscript
    pioscript pibrella_scripts/simon_game.pioscript
    pioscript pibrella_scripts/photosensor.pioscript
+   pioscript pibrella_scripts/sound_detector.pioscript
    pioscript pibrella_scripts/star_wars.pioscript
+   pioscript pibrella_scripts/traffic_light.pioscript
+   pioscript pibrella_scripts/voice_activated_record.pioscript
