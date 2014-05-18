@@ -38,6 +38,7 @@ private:
 	char mWavfile[256];
 	int mLineNum;
 	bool mMissing;
+	void *mData;
 	Mix_Chunk *mSound;
 	int mChannel;
 	int mVolume;
@@ -58,6 +59,7 @@ public:
 	bool isValid() { return (mChannel != -1); };
 	bool isMissing() { return mMissing; };
 	void notMissing() { mMissing = false; };
+	int convLoadWAV(const char *wavfile);
 	bool replaceWAV(void *data, int dataSize);
 	bool play(int loops, double now);
 	bool isPlaying(double now);

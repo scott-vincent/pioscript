@@ -1,0 +1,29 @@
+# This script lights the LED on pin 2 whenever it detects some
+# sound. 
+#
+# If you are in a noisy room try changing the recording_level
+# value from 8 to a higher number. Any sounds below this level
+# are treated as silence and will not trigger the LED.
+#
+# Press the switch on pin 9 to stop this script.
+
+recording_level 8
+turn_off *
+print
+print "Make some sound to light the LED."
+print "Press the switch to quit."
+start_activity Sound Trigger
+wait_press 9
+exit
+
+#
+# This is the 'Sound Trigger' activity
+#
+activity Sound Trigger
+start_listening_wait .1
+turn_on 2
+while listening()
+	wait .1
+end_while
+turn_off 2
+repeat

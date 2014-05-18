@@ -5,9 +5,12 @@
 # Press Ctrl-C to quit. The last sound recorded will be saved in
 # the mysound.wav file.
 
+turn_off *
 print
 print "Press and hold the switch to record some sound."
 print "Don't start speaking until the LED is lit."
+print
+print "Press Ctrl-C to quit."
 wait_pressed 9
 start_recording
 turn_on 2

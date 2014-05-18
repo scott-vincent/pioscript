@@ -26,21 +26,20 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 						  PaStreamCallbackFlags statusFlags,
 						  void *userData)
 {
-	const Record::SAMPLE *src = (const Record::SAMPLE*)inputBuffer;
-	Record::RecordData *data = (Record::RecordData*)userData;
-	Record::SAMPLE *dest = &data->samples[data->frameIndex];
-
 	// Put one frame in the buffer so we know we know we have
 	// started recording.
+	Record::RecordData *data = (Record::RecordData*)userData;
 	if (data->frameIndex == 0){
 		data->frameIndex = 1;
 		data->samples[0] = 0;
 		data->silenceStart = 1;
 		data->soundStart = -1;
+		data->lastSound = -1;
 		data->soundCount = 0;
-		data->silenceLen = 0;
-		data->silenceEnd = -1;
 	}
+
+	const Record::SAMPLE *src = (const Record::SAMPLE*)inputBuffer;
+	Record::SAMPLE *dest = &data->samples[data->frameIndex];
 
 	// Save the frame buffer (will be in mono).
 	// Any sound must be longer than 500 frames otherwise it is
@@ -54,71 +53,80 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 		*dest++ = *src;
 		if (*src < -(data->recordingLevel) || *src > data->recordingLevel)
 		{
-			// Found some sound
+			if (data->soundStart == -1){
+				data->soundStart = data->frameIndex;
+				data->soundCount = 0;
+			}
+			data->lastSound = data->frameIndex;
 			data->soundCount++;
+		}
 
-			// Remove silence and background noise if required.
-			// Note that we don't remove background noise for
-			// fixed length recordings.
-			if (data->silenceWanted < data->maxFrames &&
-				data->frameIndex - data->silenceStart > 8000)
+		if (data->soundStart == -1){
+			if (data->soundTriggered && (data->frameIndex - data->silenceStart)
+						>= data->silenceWanted)
 			{
-				if (data->soundStart > -1){
-					if (data->silenceStart - data->soundStart <= 500){
-						// Remove very short sounds, i.e. noise
-						data->silenceStart = data->soundStart;
+				data->frameIndex = data->silenceStart;
+				return paComplete;
+			}
+		}
+		else if (data->frameIndex - data->soundStart > 500){
+			// Is this the start of a new sound?
+			if (data->soundStart > data->silenceStart){
+				if (data->soundCount > 250){
+					// Found genuine sound
+					if (data->soundStart - data->silenceStart > 8000){
+						// Found silence before this sound
+						if (data->silenceStart == 1){
+							// Remove silence from start
+							int frames = data->frameIndex - data->soundStart;
+							int byteLen = frames * sizeof(short);
+							memcpy(&data->samples[0],
+								&data->samples[data->soundStart], byteLen);
+							dest = &data->samples[frames];
+							data->frameIndex = frames - 1;
+							data->soundStart = 0;
+							data->lastSound = data->frameIndex;
+						}
+						else {
+							// Remove background noise
+							/*
+							int frames = data->soundStart - data->silenceStart;
+							int byteLen = frames * sizeof(short);
+							memset(&data->samples[data->silenceStart],
+								0, byteLen);
+							*/
+						}
 					}
-				}
-				if (data->silenceStart == 1){
-					// Remove silence at start
-					dest = &data->samples[1];
-					data->frameIndex = 0;
+					data->silenceStart = data->lastSound + 1;
+					data->soundTriggered = true;
 				}
 				else {
-					// Make silence really silent (remove background noise)
-					int silenceLen = data->frameIndex - data->silenceStart;
-					dest = &data->samples[data->silenceStart];
-					for (int j = 0; j < silenceLen; j++)
-						*dest++ = 0;
-
-					if (data->silenceStart == data->silenceEnd)
-						data->silenceLen += silenceLen;
-					else
-						data->silenceLen = silenceLen;
-
-					data->silenceEnd = data->frameIndex + 1;
+					// Ignore noise
+					data->soundStart = -1;
 				}
-				data->soundStart = data->frameIndex;
-				data->soundCount = 1;
 			}
-			else if (data->soundCount > 500){
-				data->soundTriggered = true;
-				data->silenceLen = 0;
+			else if (data->frameIndex - data->lastSound > 500){
+				// Sound has ended. Include the last 500 frames
+				// so we don't chop the sound off.
+				data->silenceStart = data->frameIndex;
+				data->soundStart = -1;
 			}
+		}
 
-			data->silenceStart = data->frameIndex + 1;
-		}
-		else if (data->soundTriggered && (data->silenceLen
-			 + (data->frameIndex - data->silenceStart) >= data->silenceWanted))
-		{
-printf("silence len=%d, frame index=%d, silence start=%d, silence wanted=%d\n",
-data->silenceLen, data->frameIndex, data->silenceStart, data->silenceWanted);
-			// Final silence length reached
-			data->frameIndex = data->silenceStart;
-			return paComplete;
-		}
 		src++;
 		data->frameIndex++;
-		if (data->soundWanted == 0){
-			// Listening mode. When buffer is full just start again.
+
+		if (data->soundWanted == 0 || !data->soundTriggered){
+			// Listening mode or not triggered yet so if
+			// buffer is full just start again.
 			if (data->frameIndex >= data->maxFrames){
-				dest = &data->samples[1];
 				data->frameIndex = 1;
+				data->samples[0] = 0;
 				data->silenceStart = 1;
 				data->soundStart = -1;
+				data->lastSound = -1;
 				data->soundCount = 0;
-				data->silenceLen = 0;
-				data->silenceEnd = -1;
+				dest = &data->samples[1];
 			}
 		}
 		else if (data->frameIndex >= data->soundWanted){
@@ -141,8 +149,8 @@ Record::Record()
 	mSaving = false;
 	mConverted = false;
 
-	// Default recording level is 5
-	setLevel(5000);
+	// Default recording level is 8
+	setLevel(8000);
 
 	PaError err;
 	PaStreamParameters inputParams;
@@ -165,7 +173,7 @@ Record::Record()
 		// Stop sinking stderr
 		fclose(stderr);
 		stderr = fdopen(fd, "w");
-		fprintf(stderr, "No recording device found. Make sure you've connected a USB microphone (or USB webcam with built-in mic).\n");
+		fprintf(stderr, "No recording device found. Make sure you've connected a USB microphone or USB webcam with built-in mic.\n");
 		Pa_Terminate();
 		return;
 	}
@@ -175,9 +183,7 @@ Record::Record()
 	inputParams.suggestedLatency = Pa_GetDeviceInfo(inputParams.device)->defaultLowInputLatency;
 	inputParams.hostApiSpecificStreamInfo = NULL;
 
-	mRecordData.actualRate = INTERNAL_RATE;
-printf("**************   Forcing sample rate to 48 Khz   ****************\n");
-mRecordData.actualRate = ALTERNATE_RATE;
+	mRecordData.actualRate = Sample::INTERNAL_RATE;
 	// Use 50ms buffer
 	int framesPerBuffer = mRecordData.actualRate / 20;
     err = Pa_OpenStream(
@@ -353,22 +359,8 @@ bool Record::saveWAV(const char *filename, Audio *audio)
 
 	mSaving = true;
 	stopStream();
-
-	if (!mConverted){
-		mConverted = true;
-
-		// Add one frame of silence if buffer is empty
-		if (mRecordData.frameIndex == 0){
-			mRecordData.samples[0] = 0;
-			mRecordData.frameIndex = 1;
-		}
-
-		// Convert from mono to stereo and also adjust
-		// the sample rate if it is wrong.
-		mRecordData.frameIndex = Sample::convert(
-				mRecordData.samples, 1, mRecordData.frameIndex,
-				mRecordData.actualRate);
-	}
+	if (!convertData())
+		return false;
 
 	static const int headerSize = 44;
 	char header[headerSize];
@@ -385,9 +377,9 @@ bool Record::saveWAV(const char *filename, Audio *audio)
 	memcpy(&header[20], &sval, 2);
 	sval = 2;			// Stereo (2 channels)
 	memcpy(&header[22], &sval, 2);
-	val = INTERNAL_RATE;		// Sample rate
+	val = Sample::INTERNAL_RATE;		// Sample rate
 	memcpy(&header[24], &val, 4);
-	val = INTERNAL_RATE * 4;	// Sample rate * 2 (16-bit) * channels
+	val = Sample::INTERNAL_RATE * 4;	// Sample rate * 2 (16-bit) * channels
 	memcpy(&header[28], &val, 4);
 	sval = 4;			// 2 (16-bit) * channels
 	memcpy(&header[32], &sval, 2);
@@ -433,26 +425,48 @@ bool Record::playWAV(Audio *audio, double now)
 	}
 
 	stopStream();
-
-	if (!mConverted){
-		mConverted = true;
-
-		// Add one frame of silence if buffer is empty
-		if (mRecordData.frameIndex == 0){
-			mRecordData.samples[0] = 0;
-			mRecordData.frameIndex = 1;
-		}
-
-		// Convert from mono to stereo and also adjust
-		// the sample rate if it is wrong.
-		mRecordData.frameIndex = Sample::convert(
-				mRecordData.samples, 1, mRecordData.frameIndex,
-				mRecordData.actualRate);
-	}
+	if (!convertData())
+		return false;
 
 	int dataSize = mRecordData.frameIndex * sizeof(SAMPLE) * 2;
 	if (!audio->replaceWAV(mRecordData.samples, dataSize))
 		return false;
 
 	return audio->play(0, now);
+}
+
+
+/*
+ * If the data is not in the required format we convert it here.
+ * It converts mono to stereo and also converts to our internal
+ * sample rate. The frame index will be adjusted if the sample
+ * rate is changed.
+ */
+bool Record::convertData()
+{
+	if (mConverted)
+		return true;
+
+	mConverted = true;
+
+	// Add one frame of silence if buffer is empty
+	if (mRecordData.frameIndex == 0){
+		mRecordData.samples[0] = 0;
+		mRecordData.frameIndex = 1;
+	}
+
+	// Convert from mono to stereo and also adjust
+	// the sample rate if it is wrong.
+	short *outData = Sample::convert(
+			mRecordData.samples, 1, mRecordData.frameIndex,
+			mRecordData.actualRate);
+
+	if (!outData)
+		return false;
+
+	// Copy outData and then free it
+	int dataLen = mRecordData.frameIndex * sizeof(short) * 2;
+	memcpy(mRecordData.samples, outData, dataLen);
+	free(outData);
+	return true;
 }

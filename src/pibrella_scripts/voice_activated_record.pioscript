@@ -1,26 +1,44 @@
 # This script listens for some sound and then turns on the Red
 # LED and starts recording when it hears some. It will turn off
 # the Red LED and stop recording when there is silence for at
-# least 2 seconds. The sound will then be saved and played back.
+# least 0.5 seconds. The sound will then be saved and played back.
 #
 # If you are in a noisy room try changing the recording_level
-# value from 5 to 10. Any sounds below this level are treated
-# as silence and will not trigger the recording.
+# value from 8 to a higher number. Any sounds below this level
+# are treated as silence and will not trigger the recording.
 #
-# Press Ctrl-C to stop this script.
+# Press the Button to stop this script.
 
 use_addon Pibrella
-recording_level 5
+recording_level 8
+turn_off *
 print
-print "Start speaking to record some sound"
-start_recording_wait 2
+print "When the Green LED is lit you can start speaking."
+print "When the Red LED is lit the recording is in progress."
+print "When the Amber LED is lit the recording is being saved and played back."
+print
+print "Press the Button to quit."
+start_activity Voice Recorder
+wait_press Button
+turn_off *
+exit
+
+#
+# This is the 'Voice Recorder' activity
+#
+activity Voice Recorder
+turn_on Green
+start_recording_wait .5
 turn_on Red
 while recording()
 	wait .1
 end_while
 turn_off Red
+turn_off Green
+turn_on Amber
 save_recording sounds/mysound.wav
 print "Your recording has been saved to file sounds/mysound.wav"
 print "Playing back your recording..."
 play_sound sounds/mysound.wav
+turn_off Amber
 repeat

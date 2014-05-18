@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "audio.h"
+#include "sample.h"
 
 bool Audio::mInit = false;
 bool Audio::mUsingAudio = false;
@@ -96,6 +97,7 @@ Audio::Audio(const char *wavfile, int lineNum)
 {
 	strcpy(mWavfile, wavfile);
 	mLineNum = lineNum;
+	mData = NULL;
 	mSound = NULL;
 	mChannel = -1;
 
@@ -108,7 +110,12 @@ Audio::Audio(const char *wavfile, int lineNum)
 
 	if (access(wavfile, 0) == 0){
 		mMissing = false;
-		mSound = Mix_LoadWAV(wavfile);
+		int dataLen = convLoadWAV(wavfile);
+		if (dataLen == -1){
+			fprintf(stderr, "Failed to load sound %s\n", wavfile);
+			return;
+		}
+		mSound = Mix_QuickLoad_RAW((Uint8*)mData, dataLen);
 		if (!mSound){
 			fprintf(stderr, "Failed to load sound %s\n", wavfile);
 			fprintf(stderr, "Error: %s\n", Mix_GetError());
@@ -119,10 +126,10 @@ Audio::Audio(const char *wavfile, int lineNum)
 		// May get replaced by a recorded sample so just
 		// create silence for now.
 		mMissing = true;
-		short silence[2];
-		silence[0] = 0;
-		silence[1] = 0;
-		mSound = Mix_QuickLoad_RAW((Uint8*)silence, 4);
+		int dataLen = sizeof(short) * 2;
+		mData = (Uint8*)malloc(dataLen);
+		memset(mData, 0, dataLen);
+		mSound = Mix_QuickLoad_RAW((Uint8*)mData, dataLen);
 	}
 
 	// Allocate a unique channel for this sound
@@ -153,6 +160,143 @@ Audio::~Audio()
 		mSound->alen = mSaved.alen;
 		Mix_FreeChunk(mSound);
 	}
+	
+	if (mData)
+		free(mData);
+}
+
+
+/*
+ * Load a WAV file and convert to to 16-bit stereo 44.1 KHz
+ * if it is not already in the required format.
+ *
+ * Returns -1 on error or size of malloc'ed buffer on success.
+ */
+int Audio::convLoadWAV(const char *wavfile)
+{
+	FILE *inf = fopen(wavfile, "rb");
+	if (!inf){
+		fprintf(stderr, "Cannot open WAV file\n");
+		return -1;
+	}
+
+	char hdr[20];
+	int bytes = fread(hdr, 1, 20, inf);
+	if (bytes != 20){
+		fprintf(stderr, "Cannot read WAV file header\n");
+		fclose(inf);
+		return -1;
+	}
+
+	if (strncasecmp(&hdr[0], "RIFF", 4) != 0
+			|| strncasecmp(&hdr[8], "WAVEfmt ", 8) != 0)
+	{
+		fprintf(stderr, "File is not a WAV file\n");
+		fclose(inf);
+		return -1;
+	}
+
+	// Last 4 bytes is length of fmt chunk
+	int chunkLen;
+	memcpy(&chunkLen, &hdr[16], 4);
+	if (chunkLen < 16){
+		fprintf(stderr, "Cannot read WAV file header\n");
+		fclose(inf);
+		return -1;
+	}
+
+	// Read fmt chunk + next chunk id and size
+	chunkLen += 8;
+	char *chunk = (char*)malloc(chunkLen);
+	bytes = fread(chunk, 1, chunkLen, inf);
+	if (bytes != chunkLen){
+		fprintf(stderr, "Cannot read WAV file header");
+		free(chunk);
+		fclose(inf);
+		return -1;
+	}
+
+	short channels;
+	memcpy(&channels, &chunk[2], 2);
+	int sampleRate;
+	memcpy(&sampleRate, &chunk[4], 4);
+	short bits;
+	memcpy(&bits, &chunk[14], 2);
+	int sampleSize = bits / 8;
+
+	if (channels != 1 && channels != 2){
+		fprintf(stderr, "Cannot load WAV file. Only mono or stereo sound is supported. This sound has %d channels.\n", channels);
+		free(chunk);
+		fclose(inf);
+		return -1;
+	}
+
+	// Keep reading chunks until we find the data chunk
+	while (strncasecmp(&chunk[chunkLen - 8], "data", 4) != 0){
+		// Last 4 bytes is length of next chunk
+		memcpy(&chunkLen, &chunk[chunkLen - 4], 4);
+		free(chunk);
+
+		// Read chunk + next chunk id and size
+		chunkLen += 8;
+		chunk = (char*)malloc(chunkLen);
+		bytes = fread(chunk, 1, chunkLen, inf);
+		if (bytes != chunkLen){
+			fprintf(stderr, "Cannot read WAV file header");
+			free(chunk);
+			fclose(inf);
+			return -1;
+		}
+	}
+
+	// Last 4 bytes is length of data
+	int dataLen;
+	memcpy(&dataLen, &chunk[chunkLen - 4], 4);
+	free(chunk);
+
+	// Read data
+	mData = malloc(dataLen);
+	if (!mData){
+		fprintf(stderr, "Failed to allocate memory for WAV file\n");
+		fclose(inf);
+		return -1;
+	}
+
+	bytes = fread(mData, 1, dataLen, inf);
+	fclose(inf);
+	if (bytes != dataLen){
+		fprintf(stderr, "Cannot read WAV file data\n");
+		free(mData);
+		mData = NULL;
+		return -1;
+	}
+
+	if (bits != 16){
+		// Convert to 16-bit
+		short *outData = Sample::convert(mData, dataLen, bits);
+		free(mData);
+		if (!outData){
+			mData = NULL;
+			return -1;
+		}
+		mData = outData;
+	}
+
+	if (channels != 2 || sampleRate != Sample::INTERNAL_RATE){
+		// Convert to correct format
+		int frameCount = dataLen / (sizeof(short) * channels);
+		short *outData = Sample::convert((short*)mData, channels,
+					frameCount, sampleRate);
+		free(mData);
+		if (!outData){
+			mData = NULL;
+			return -1;
+		}
+		mData = outData;
+		dataLen = frameCount * sizeof(short) * 2;
+	}
+
+	return dataLen;
 }
 
 
@@ -173,7 +317,17 @@ bool Audio::replaceWAV(void *data, int dataSize)
 		Mix_HaltChannel(mChannel);
 
 	Mix_FreeChunk(mSound);
-	mSound = Mix_QuickLoad_RAW((Uint8*)data, dataSize);
+	if (mData)
+		free(mData);
+
+	mData = malloc(dataSize);
+	if (!mData){
+		fprintf(stderr, "Cannot play recording - Failed to allocate memory\n");
+		return false;
+	}
+
+	memcpy(mData, data, dataSize);
+	mSound = Mix_QuickLoad_RAW((Uint8*)mData, dataSize);
 	mSaved.abuf = mSound->abuf;
 	mSaved.alen = mSound->alen;
 	mMilliLen = (mSaved.alen * 10) / (441 * 4);

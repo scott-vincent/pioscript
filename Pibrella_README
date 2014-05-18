@@ -42,6 +42,18 @@ Sound
   stop_sound mywavfile   Stop playing a sound.
   stop_sound *           Stop all sounds.
 
+Recording
+---------
+  record_sound 10        Record 10 seconds of sound from a USB microphone or
+                         USB webcam with built-in mic.
+  play_recording         Play the last recording and wait for it to complete.
+  save_recording mywavfile
+                         Save the last recording.
+  start_recording        Start recording. Recording will continue in the
+                         background until you use the stop_recording command.
+  stop_recording         Stop recording. The recording will stop automatically
+                         if the maximum time of 100 seconds is reached.
+
 Input/Output
 ------------
   wait_press Button      Wait for Button to be released and then pressed.

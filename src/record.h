@@ -23,7 +23,6 @@
 
 class Record {
 public:
-	static const int INTERNAL_RATE = 44100;
 	static const int ALTERNATE_RATE = 48000;
 	static const int MAX_DURATION = 100;
 	typedef short SAMPLE;
@@ -39,9 +38,8 @@ public:
 		int silenceWanted;	// Stop recording after this many frames of silence
 		int silenceStart;
 		int soundStart;
+		int lastSound;
 		int soundCount;
-		int silenceLen;
-		int silenceEnd;
 	} RecordData;
 
 private:
@@ -62,6 +60,7 @@ public:
 	bool isTriggered() { return mRecordData.soundTriggered; };
 	bool saveWAV(const char *filename, Audio *audio);
 	bool playWAV(Audio *audio, double now);
+	bool convertData();
 };
 
 #endif

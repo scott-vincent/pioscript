@@ -17,8 +17,10 @@
 
 class Sample {
 public:
-	static int convert(short *data, int frameCount,
-					   int actualRate, int wantedRate);
+	static const int INTERNAL_RATE = 44100;
+
+	static short *convert(short *data, int channels, int &frameCount, int sampleRate);
+	static short *convert(void *data, int &dataLen, int bits);
 };
 
 #endif

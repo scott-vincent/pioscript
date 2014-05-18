@@ -641,7 +641,7 @@ bool Activity::exec(Command *command, double now)
 
 		case Command::Clear_Screen:
 			Engine::displayOn = false;
-			printf("\033c");
+			printf("\033c\n");
 			return true;
 
 		default:

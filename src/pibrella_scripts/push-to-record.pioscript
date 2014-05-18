@@ -6,17 +6,23 @@
 # the mysound.wav file.
 
 use_addon Pibrella
+turn_off *
 print
 print "Press and hold the Button to record some sound."
 print "Don't start speaking until the Red LED is lit."
+print "When the Amber LED is lit the sound is being saved and played back."
+print
+print "Press Ctrl-C to quit."
 wait_pressed Button
 start_recording
 turn_on Red
 wait_released Button
 stop_recording
 turn_off Red
+turn_on Amber
 save_recording sounds/mysound.wav
 print "Your recording has been saved to file sounds/mysound.wav"
 print "Playing back your recording..."
 play_sound sounds/mysound.wav
+turn_off Amber
 repeat
