@@ -27,6 +27,8 @@ exit
 # This is the 'Voice Recorder' activity
 #
 activity Voice Recorder
+print
+print "Listening..."
 turn_on Green
 start_recording_wait .5
 turn_on Red
