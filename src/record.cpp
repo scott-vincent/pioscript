@@ -36,6 +36,7 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 		data->soundStart = -1;
 		data->lastSound = -1;
 		data->soundCount = 0;
+		data->loudSoundCount = 0;
 	}
 
 	const Record::SAMPLE *src = (const Record::SAMPLE*)inputBuffer;
@@ -56,9 +57,12 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 			if (data->soundStart == -1){
 				data->soundStart = data->frameIndex;
 				data->soundCount = 0;
+				data->loudSoundCount = 0;
 			}
 			data->lastSound = data->frameIndex;
 			data->soundCount++;
+			if (*src < -10000 || *src > 10000)
+				data->loudSoundCount++;
 		}
 
 		if (data->soundStart == -1){
@@ -72,7 +76,7 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 		else if (data->frameIndex - data->soundStart > 500){
 			// Is this the start of a new sound?
 			if (data->soundStart > data->silenceStart){
-				if (data->soundCount > 250){
+				if (data->soundCount > 300 && data->loudSoundCount > 100){
 					// Found genuine sound
 					if (data->soundStart - data->silenceStart > 8000){
 						// Found silence before this sound
@@ -126,6 +130,7 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 				data->soundStart = -1;
 				data->lastSound = -1;
 				data->soundCount = 0;
+				data->loudSoundCount = 0;
 				dest = &data->samples[1];
 			}
 		}

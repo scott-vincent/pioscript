@@ -40,6 +40,7 @@ public:
 		int soundStart;
 		int lastSound;
 		int soundCount;
+		int loudSoundCount;
 	} RecordData;
 
 private:

@@ -15,6 +15,7 @@ print "Make some sound to light the Red LED."
 print "Press the Button to quit."
 start_activity Sound Trigger
 wait_press Button
+turn_off *
 exit
 
 #
