@@ -2,12 +2,12 @@
 # sound. 
 #
 # If you are in a noisy room try changing the recording_level
-# value from 8 to a higher number. Any sounds below this level
+# value from 5 to a higher number. Any sounds below this level
 # are treated as silence and will not trigger the LED.
 #
 # Press the switch on pin 9 to stop this script.
 
-recording_level 8
+recording_level 5
 turn_off *
 print
 print "Make some sound to light the LED."

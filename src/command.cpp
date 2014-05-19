@@ -1871,7 +1871,7 @@ void Command::reportCommands()
 	printf("                         as the recording is not being stored in memory.\n");
 	printf("  stop_listening         Similar to stop_recording.\n");
 	printf("  recording_level 15     Set the silence threshold. Any sound below this level\n");
-	printf("                         is treated as silence. Default is 8 and maximum is 100.\n");
+	printf("                         is treated as silence. Default is 5 and maximum is 100.\n");
 	printf("\n");
 	printf("GPIO\n");
 	printf("----\n");

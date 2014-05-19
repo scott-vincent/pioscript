@@ -194,7 +194,7 @@ bool Activity::exec(Command *command, double now)
 			return true;
 
 		case Command::Start_Recording:
-			return Engine::recorder->startStream(-1, -1);
+			return Engine::recorder->startStream(100000, -1);
 
 		case Command::Start_Recording_Wait:
 			if (!Engine::recorder->startStream(-1, command->param[0].getValue()))

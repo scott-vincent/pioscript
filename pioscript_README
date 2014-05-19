@@ -195,7 +195,7 @@ Recording
                          as the recording is not being stored in memory.
   stop_listening         Similar to stop_recording.
   recording_level 15     Set the silence threshold. Any sound below this level
-                         is treated as silence. Default is 8 and maximum is 100.
+                         is treated as silence. Default is 5 and maximum is 100.
 
 GPIO
 ----

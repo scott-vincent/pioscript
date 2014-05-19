@@ -30,17 +30,15 @@ public:
 	typedef struct {
 		int recordingLevel;
 		int actualRate;
-		int maxFrames;
+		int maxIndex;
 		SAMPLE *samples;
 		int frameIndex;
 		bool soundTriggered;
 		int soundWanted;	// Stop recording after this many frames
 		int silenceWanted;	// Stop recording after this many frames of silence
 		int silenceStart;
-		int soundStart;
-		int lastSound;
-		int soundCount;
-		int loudSoundCount;
+		int chunkFrameCount;
+		int chunkNoiseCount;
 	} RecordData;
 
 private:

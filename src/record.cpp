@@ -32,112 +32,101 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 	if (data->frameIndex == 0){
 		data->frameIndex = 1;
 		data->samples[0] = 0;
-		data->silenceStart = 1;
-		data->soundStart = -1;
-		data->lastSound = -1;
-		data->soundCount = 0;
-		data->loudSoundCount = 0;
+		data->chunkFrameCount = 0;
+		data->chunkNoiseCount = 0;
 	}
 
 	const Record::SAMPLE *src = (const Record::SAMPLE*)inputBuffer;
 	Record::SAMPLE *dest = &data->samples[data->frameIndex];
 
 	// Save the frame buffer (will be in mono).
-	// Any sound must be longer than 500 frames otherwise it is
-	// deemed to be a crackle and will be replaced with silence.
-	// Any sound below the threshold will be deemed to be
-	// background noise and will be replaced with silence but
-	// only if it lasts for more than 8000 frames as we don't
-	// want to replace short snippets of background noise, e.g.
-	// inbetween spoken words. 
 	for (int i = 0; i < framesPerBuffer; i++){
 		*dest++ = *src;
-		if (*src < -(data->recordingLevel) || *src > data->recordingLevel)
-		{
-			if (data->soundStart == -1){
-				data->soundStart = data->frameIndex;
-				data->soundCount = 0;
-				data->loudSoundCount = 0;
-			}
-			data->lastSound = data->frameIndex;
-			data->soundCount++;
-			if (*src < -10000 || *src > 10000)
-				data->loudSoundCount++;
+
+		// Fixed length recording?
+		if (data->soundWanted > 0){
+			if (data->frameIndex >= data->soundWanted)
+				return paComplete;
+
+			src++;
+			data->frameIndex++;
+			continue;
+		}
+	
+		// Analyse the sound in chunks (500 frames).
+		if (data->chunkFrameCount < 500){
+			// Still analysing chunk
+			if (*src < -(data->recordingLevel) || *src > data->recordingLevel)
+				data->chunkNoiseCount++;
+
+			data->chunkFrameCount++;
+			src++;
+			data->frameIndex++;
+			continue;
 		}
 
-		if (data->soundStart == -1){
-			if (data->soundTriggered && (data->frameIndex - data->silenceStart)
-						>= data->silenceWanted)
-			{
-				data->frameIndex = data->silenceStart;
-				return paComplete;
+		// Analyse chunk. Have we found real sound or just noise?
+		bool foundSound = (data->chunkNoiseCount > 50);
+
+		// Initialise next chunk
+		data->chunkFrameCount = 0;
+		data->chunkNoiseCount = 0;
+
+		if (!data->soundTriggered){
+			// Waiting for sound to start
+			if (foundSound){
+				data->soundTriggered = true;
+				if (data->frameIndex > 1000){
+					// Remove silence at start apart from last 500 frames
+					// as we don't want to chop the start of the sound off.
+					int startFrame = data->frameIndex - 1000;
+					memcpy(&data->samples[0], &data->samples[startFrame],
+								1000 * sizeof(short));
+					data->frameIndex = 1000;
+					dest = &data->samples[data->frameIndex];
+					data->silenceStart = 1001;
+					continue;
+				}
+				data->silenceStart = data->frameIndex + 1;
+			}
+			else if (data->frameIndex >= data->maxIndex) {
+				data->frameIndex = 1;
+				dest = &data->samples[data->frameIndex];
+				continue;
 			}
 		}
-		else if (data->frameIndex - data->soundStart > 500){
-			// Is this the start of a new sound?
-			if (data->soundStart > data->silenceStart){
-				if (data->soundCount > 300 && data->loudSoundCount > 100){
-					// Found genuine sound
-					if (data->soundStart - data->silenceStart > 8000){
-						// Found silence before this sound
-						if (data->silenceStart == 1){
-							// Remove silence from start
-							int frames = data->frameIndex - data->soundStart;
-							int byteLen = frames * sizeof(short);
-							memcpy(&data->samples[0],
-								&data->samples[data->soundStart], byteLen);
-							dest = &data->samples[frames];
-							data->frameIndex = frames - 1;
-							data->soundStart = 0;
-							data->lastSound = data->frameIndex;
-						}
-						else {
-							// Remove background noise
-							/*
-							int frames = data->soundStart - data->silenceStart;
-							int byteLen = frames * sizeof(short);
-							memset(&data->samples[data->silenceStart],
-								0, byteLen);
-							*/
-						}
-					}
-					data->silenceStart = data->lastSound + 1;
-					data->soundTriggered = true;
-				}
-				else {
-					// Ignore noise
-					data->soundStart = -1;
-				}
+		else {
+			// Waiting for sound to end
+			if (foundSound){
+				data->silenceStart = data->frameIndex + 1;
 			}
-			else if (data->frameIndex - data->lastSound > 500){
-				// Sound has ended. Include the last 500 frames
-				// so we don't chop the sound off.
-				data->silenceStart = data->frameIndex;
-				data->soundStart = -1;
+			else if ((data->frameIndex - data->silenceStart) >=
+							data->silenceWanted)
+			{
+				// Remove silence at end apart from first 1000 frames
+				// as we don't want to chop the end of the sound off.
+				if (data->frameIndex - data->silenceStart > 1000)
+					data->frameIndex = data->silenceStart + 1000;
+
+				return paComplete;
+			}
+
+			if (data->frameIndex >= data->maxIndex){
+				if (data->soundWanted == 0){
+					// Listening mode so reset and carry over
+					// silence (i.e. will become negative).
+					data->silenceStart -= data->frameIndex;
+					data->frameIndex = 1;
+					dest = &data->samples[data->frameIndex];
+					continue;
+				}
+				else
+					return paComplete;
 			}
 		}
 
 		src++;
 		data->frameIndex++;
-
-		if (data->soundWanted == 0 || !data->soundTriggered){
-			// Listening mode or not triggered yet so if
-			// buffer is full just start again.
-			if (data->frameIndex >= data->maxFrames){
-				data->frameIndex = 1;
-				data->samples[0] = 0;
-				data->silenceStart = 1;
-				data->soundStart = -1;
-				data->lastSound = -1;
-				data->soundCount = 0;
-				data->loudSoundCount = 0;
-				dest = &data->samples[1];
-			}
-		}
-		else if (data->frameIndex >= data->soundWanted){
-			// Final sound length reached
-			return paComplete;
-		}
 	}
 
 	return paContinue;
@@ -154,8 +143,8 @@ Record::Record()
 	mSaving = false;
 	mConverted = false;
 
-	// Default recording level is 8
-	setLevel(8000);
+	// Default recording level is 5
+	setLevel(5000);
 
 	PaError err;
 	PaStreamParameters inputParams;
@@ -231,8 +220,8 @@ Record::Record()
 
 	// Initialise the data buffer so we can store up
 	// to 100 seconds of recorded audio in stereo.
-	mRecordData.maxFrames = MAX_DURATION * mRecordData.actualRate;
-	int maxBytes = mRecordData.maxFrames * sizeof(SAMPLE) * 2;
+	mRecordData.maxIndex = MAX_DURATION * mRecordData.actualRate;
+	int maxBytes = (mRecordData.maxIndex + 1) * sizeof(SAMPLE) * 2;
 	mRecordData.samples = (SAMPLE*)malloc(maxBytes);
 	if (!mRecordData.samples){
 		fprintf(stderr, "Failed to allocate memory for record buffer\n");
@@ -263,8 +252,8 @@ Record::~Record()
 bool Record::setLevel(int level)
 {
 	// Level is in thousandths. Default is 5 and max is 100.
-	// Convert to value between 0 and 10,000.
-	mRecordData.recordingLevel = (level * 3) / 10;
+	// Convert to value between 0 and 20,000.
+	mRecordData.recordingLevel = level / 5;
 }
 
 
@@ -296,16 +285,16 @@ bool Record::startStream(int soundWanted, int silenceWanted)
 	// recording that starts when there is no silence and
 	// stops when there is silence.
 	mRecordData.soundTriggered = false;
-	if (soundWanted == -1)
-		mRecordData.soundWanted = mRecordData.maxFrames;
-	else
+	if (soundWanted > 0)
 		mRecordData.soundWanted =
 					(soundWanted * (mRecordData.actualRate / 100)) / 10;
+	else
+		mRecordData.soundWanted = soundWanted;
 
 	if (silenceWanted == -1){
-		// Want recordeding to start immediately and don't
+		// Want recording to start immediately and don't
 		// want recording to stop when silence is heard.
-		mRecordData.silenceWanted = mRecordData.maxFrames;
+		mRecordData.silenceWanted = -1;
 		mRecordData.soundTriggered = true;
 	}
 	else

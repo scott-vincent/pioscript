@@ -4,13 +4,13 @@
 # least 0.5 seconds. The sound will then be saved and played back.
 #
 # If you are in a noisy room try changing the recording_level
-# value from 8 to a higher number. Any sounds below this level
+# value from 5 to a higher number. Any sounds below this level
 # are treated as silence and will not trigger the recording.
 #
 # Press the Button to stop this script.
 
 use_addon Pibrella
-recording_level 8
+recording_level 5
 turn_off *
 print
 print "When the Green LED is lit you can start speaking."
