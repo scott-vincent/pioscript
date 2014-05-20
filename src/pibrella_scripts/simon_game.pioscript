@@ -1,5 +1,13 @@
+# This script is the classic memory game known as Simon. You have four large
+# buttons each with a corresponding LED and each button has a different
+# musical note associated with it. When you press a button the note will play
+# and the LED will light. You have to memorise an ever increasing sequence of
+# notes and then play back the sequence by pressing the corresponding buttons.
+# The game ends when you get the sequence wrong. 
 #
-# This is the Main activity
+# This script requires you to connect four large buttons to InputA, InputB,
+# InputC and InputD and 4 corresponding LED's to OutputE, OutputF, OutputG
+# and OutputH.
 #
 use_addon Pibrella
 clear_screen

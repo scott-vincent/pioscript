@@ -266,6 +266,7 @@ bool Script::orphanNestingCheck()
 			return false;
 		}
 	}
+	return true;
 }
 
 
@@ -634,7 +635,13 @@ bool Script::addCommand(char *name, char *params, int lineNum, char *lineStr)
 			nestedCommands.pop_back();
 			if (command->type == Command::Else
 				|| command->type == Command::Else_If)
+			{
 				nestedCommands.push_back(command);
+			}
+			if (command->type == Command::Else_If){
+				if (!addFuncObjects(command, -1, lineNum))
+					return false;
+			}
 		}
 		else {
 			// Found end type with no start type

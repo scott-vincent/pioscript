@@ -1,0 +1,135 @@
+# This script requires you to connect four large buttons to InputA, InputB,
+# InputC and InputD and 4 corresponding LED's to OutputE, OutputF, OutputG
+# and OutputH.
+#
+# You switch between Play Mode and Record Mode by pressing the Pibrella Button.
+# The Green LED will light when you are in Play Mode and the Red LED will light
+# when you are in Record Mode.
+#
+# When you are in Play mode press any of the large buttons to hear the sound
+# that is associated with that button. The LED will light when the sound is
+# playing.
+#
+# When you are in Record mode press and hold one of the large buttons to record
+# a new sound for that button. The LED will light when recording is in
+# progress. 
+#
+# Press and hold the Pibrella Button to quit.
+#
+use_addon Pibrella
+start_activity Switch To Play Mode
+wait_longpress Button
+turn_off *
+exit
+
+
+#
+# This is the 'Switch To Play Mode' activity
+#
+activity Switch To Play Mode
+turn_on Green
+print
+print "Play Mode"
+print "---------"
+print "Press one of the large buttons to hear the sound associated with it."
+print "Try pressing more than one button at once."
+print "To add some new sounds press the Pibrella Button."
+print
+print "Press and hold the Pibrella Button to quit."
+start_activity Play Mode
+wait_press Button
+stop_activity Play Mode 
+stop_sound sounds/mysound1.wav
+stop_sound sounds/mysound2.wav
+stop_sound sounds/mysound3.wav
+stop_sound sounds/mysound4.wav
+turn_off *
+start_activity Switch To Record Mode
+
+
+#
+# This is the 'Switch To Record Mode' activity
+#
+activity Switch To Record Mode
+turn_on Red
+print
+print "Record Mode"
+print "-----------"
+print "Press and hold one of the large buttons to add a sound to it."
+print "Recording will stop when you release the button." 
+print "To switch back to play mode press the Pibrella Button."
+print
+print "Press and hold the Pibrella Button to quit."
+start_activity Record Mode
+wait_press Button
+stop_activity Record Mode 
+stop_recording
+turn_off *
+start_activity Switch To Play Mode
+
+
+#
+# This is the 'Play Mode' activity
+#
+activity Play Mode
+if pressed(InputA)
+	turn_on OutputE
+	start_sound sounds/mysound1.wav
+else if pressed(InputB)
+	turn_on OutputF
+	start_sound sounds/mysound2.wav
+else if pressed(InputC)
+	turn_on OutputG
+	start_sound sounds/mysound3.wav
+else if pressed(InputD)
+	turn_on OutputH
+	start_sound sounds/mysound4.wav
+end_if
+if not playing(sounds/mysound1.wav)
+	turn_off OutputE
+else if not playing(sounds/mysound2.wav)
+	turn_off OutputF
+else if not playing(sounds/mysound3.wav)
+	turn_off OutputG
+else if not playing(sounds/mysound4.wav)
+	turn_off OutputH
+end_if
+wait .1
+repeat
+
+
+#
+# This is the 'Record Mode' activity
+#
+activity Record Mode
+if pressed(InputA)
+	start_recording
+	turn_on OutputE
+	wait_released InputA
+	stop_recording
+	turn_off OutputE
+	save_recording sounds/mysound1.wav
+else if pressed(InputB)
+	start_recording
+	turn_on OutputF
+	wait_released InputB
+	stop_recording
+	turn_off OutputF
+	save_recording sounds/mysound2.wav
+else if pressed(InputC)
+	start_recording
+	turn_on OutputG
+	wait_released InputC
+	stop_recording
+	turn_off OutputG
+	save_recording sounds/mysound3.wav
+else if pressed(InputD)
+	start_recording
+	turn_on OutputH
+	wait_released InputD
+	stop_recording
+	turn_off OutputH
+	save_recording sounds/mysound4.wav
+end_if
+wait .1
+repeat
