@@ -1,0 +1,12 @@
+echo "Creating desktop folders"
+FOLDER="$HOME/Desktop/PioScript Pibrella"
+mkdir -p "$FOLDER"
+cp pibrella_scripts/* "$FOLDER"
+cp Pibrella_README "$FOLDER"
+cp -rp sounds "$FOLDER"
+
+FOLDER="$HOME/Desktop/PioScript Advanced"
+mkdir -p "$FOLDER"
+cp scripts/* "$FOLDER"
+cp README "$FOLDER"
+cp -rp sounds "$FOLDER"
