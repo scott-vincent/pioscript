@@ -7,7 +7,6 @@
 use_addon Pibrella
 start_activity Traffic Light
 wait_longpress Button
-stop_activity Traffic Light
 turn_off *
 exit
 
@@ -18,7 +17,7 @@ activity Traffic Light
 turn_off *
 turn_on Green
 print
-print "Press the Button to cross the road"
+print "Press the Button to cross the road or hold it down to quit"
 wait_press Button
 turn_off Green
 turn_on Amber

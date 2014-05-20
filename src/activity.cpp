@@ -867,9 +867,12 @@ bool Activity::wait(Command *command, double now)
 bool Activity::playNextNote(Command *command, double now)
 {
 	char strValue[512];
-	command->nameParam.getFullStrValue(strValue);
+	strcpy(strValue, command->nameParam.getStrValue().c_str());
 	char *pos = &(strValue[command->param[3].getValue()]);
 	pos = command->addNoteParam(0, pos, true);
+	if (pos == NULL)
+		return false;
+
 	if (command->param[0].getValue() == -1)
 		return false;
 		
