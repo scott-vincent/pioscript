@@ -1,7 +1,5 @@
-use_addon Pibrella
-print "Press the Button to quit"
 start_activity Imperial March
-wait_press Button
+wait_press 9
 stop_activity Imperial March
 sound_buzzer .25
 exit
