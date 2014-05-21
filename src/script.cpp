@@ -365,16 +365,15 @@ bool Script::addFuncObjects(Command *command, int paramNum, int lineNum)
 	char newStr[512];
 	char *dest = newStr;
 
-	const char *orig;
 	if (paramNum == -1)
-		orig = command->nameParam.getStrValue().c_str();
+		strcpy(oldStr, command->nameParam.getStrValue().c_str());
 	else
-		orig = command->param[paramNum].getStrValue().c_str();
+		strcpy(oldStr, command->param[paramNum].getStrValue().c_str());
 
 	// Convert to lower case
 	char *lwr = oldStr;
-	while (*orig != '\0'){
-		*lwr++ = tolower(*orig++);
+	while (*lwr != '\0'){
+		tolower(*lwr++);
 	}
 	*lwr = '\0';
 
