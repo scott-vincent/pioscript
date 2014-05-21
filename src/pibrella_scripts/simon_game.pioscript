@@ -11,6 +11,8 @@
 #
 use_addon Pibrella
 clear_screen
+print "Make sure you have connected four large buttons and four LEDs"
+print "to the inputs and outputs on your Pibrella."
 start_activity Endless Fun
 
 
@@ -28,7 +30,7 @@ repeat
 activity New Game
 print
 print "Simon says:"
-print "   Press any coloured button to start a new game"
+print "   Press one of the large buttons to start a new game"
 print "   or the red button on the Pibrella to quit"
 
 start_activity Attract Mode

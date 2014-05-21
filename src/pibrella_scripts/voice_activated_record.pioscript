@@ -12,6 +12,7 @@
 use_addon Pibrella
 recording_level 5
 turn_off *
+print "Make sure you have attached a USB microphone or webcam to your Pi."
 print
 print "When the Green LED is lit you can start speaking."
 print "When the Red LED is lit the recording is in progress."

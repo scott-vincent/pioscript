@@ -11,6 +11,7 @@
 
 recording_level 5
 turn_off *
+print "Make sure you have attached a USB microphone or webcam to your Pi."
 print
 print "Start speaking to record some sound."
 print "Press Ctrl-C to quit."

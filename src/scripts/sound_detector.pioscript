@@ -9,6 +9,7 @@
 
 recording_level 5
 turn_off *
+print "Make sure you have attached a USB microphone or webcam to your Pi."
 print
 print "Make some sound to light the LED."
 print "Press the switch to quit."

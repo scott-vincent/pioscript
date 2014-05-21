@@ -13,6 +13,8 @@
 # voltage.
 
 use_addon Pibrella
+print "Make sure you have attached a photo-resistor"
+print "to InputA and OutputE of your Pibrella."
 start_activity Measure
 wait_press Button
 exit

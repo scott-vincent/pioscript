@@ -6,6 +6,7 @@
 # the mysound.wav file.
 
 turn_off *
+print "Make sure you have attached a USB microphone or webcam to your Pi."
 print
 print "Press and hold the switch to record some sound."
 print "Don't start speaking until the LED is lit."

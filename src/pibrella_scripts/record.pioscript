@@ -5,6 +5,7 @@
 # Press and hold the Button for more than 1 second to exit.
 
 use_addon Pibrella
+print "Make sure you have attached a USB microphone or webcam to your Pi."
 start_activity Record Sound
 wait_longpress Button
 stop_recording

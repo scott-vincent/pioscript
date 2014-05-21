@@ -17,6 +17,10 @@
 # Press and hold the Pibrella Button to quit.
 #
 use_addon Pibrella
+clear_screen
+print "Make sure you have attached a USB microphone or webcam to your Pi"
+print "and you have connected four large buttons and four LEDs to the"
+print "inputs and outputs on your Pibrella."
 start_activity Switch To Play Mode
 wait_longpress Button
 turn_off *
@@ -31,9 +35,10 @@ turn_on Green
 print
 print "Play Mode"
 print "---------"
-print "Press one of the large buttons to hear the sound associated with it."
-print "Try pressing more than one button at once."
-print "To add some new sounds press the Pibrella Button."
+print "Press one of the large buttons to hear the sound you added to it."
+print "If you have not yet added any sounds you need to switch to record mode."
+print "To switch to Record Mode press the Pibrella Button."
+print "Tip: You can play more than one sound at the same time."
 print
 print "Press and hold the Pibrella Button to quit."
 start_activity Play Mode
@@ -44,6 +49,7 @@ stop_sound sounds/mysound2.wav
 stop_sound sounds/mysound3.wav
 stop_sound sounds/mysound4.wav
 turn_off *
+clear_screen
 start_activity Switch To Record Mode
 
 
@@ -57,7 +63,7 @@ print "Record Mode"
 print "-----------"
 print "Press and hold one of the large buttons to add a sound to it."
 print "Recording will stop when you release the button." 
-print "To switch back to play mode press the Pibrella Button."
+print "To switch back to Play Mode press the Pibrella Button."
 print
 print "Press and hold the Pibrella Button to quit."
 start_activity Record Mode
@@ -65,6 +71,7 @@ wait_press Button
 stop_activity Record Mode 
 stop_recording
 turn_off *
+clear_screen
 start_activity Switch To Play Mode
 
 
