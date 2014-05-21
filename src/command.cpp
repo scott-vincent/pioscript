@@ -843,7 +843,7 @@ char *Command::addForParams(char *params)
 
 		// If whole thing is enclosed in brackets remove them
 		char *endPos = pos;
-		while (*startPos == '('){
+		while (*startPos == '(' && *(endPos-1) == ')'){
 			startPos++;
 			endPos--;
 		}
