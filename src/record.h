@@ -30,6 +30,7 @@ public:
 	typedef struct {
 		int recordingLevel;
 		int actualRate;
+		int framesPerBuffer;
 		int maxIndex;
 		SAMPLE *samples;
 		int frameIndex;
