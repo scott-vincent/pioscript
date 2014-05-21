@@ -42,7 +42,15 @@ print "Tip: You can play more than one sound at the same time."
 print
 print "Press and hold the Pibrella Button to quit."
 start_activity Play Mode
+start_activity Playback Button 1
+start_activity Playback Button 2
+start_activity Playback Button 3
+start_activity Playback Button 4
 wait_press Button
+stop_activity Playback Button 1
+stop_activity Playback Button 2
+stop_activity Playback Button 3
+stop_activity Playback Button 4
 stop_activity Play Mode 
 stop_sound sounds/mysound1.wav
 stop_sound sounds/mysound2.wav
@@ -78,32 +86,43 @@ start_activity Switch To Play Mode
 #
 # This is the 'Play Mode' activity
 #
-activity Play Mode
-if pressed(InputA)
-	start_sound sounds/mysound1.wav
-	turn_on OutputE
-else if not playing(sounds/mysound1.wav)
+if not playing(sounds/mysound1.wav)
 	turn_off OutputE
 end_if
-if pressed(InputB)
-	start_sound sounds/mysound2.wav
-	turn_on OutputF
-else if not playing(sounds/mysound2.wav)
+if not playing(sounds/mysound2.wav)
 	turn_off OutputF
 end_if
-if pressed(InputC)
-	start_sound sounds/mysound3.wav
-	turn_on OutputG
-else if not playing(sounds/mysound3.wav)
+if not playing(sounds/mysound3.wav)
 	turn_off OutputG
 end_if
-if pressed(InputD)
-	start_sound sounds/mysound4.wav
-	turn_on OutputH
-else if not playing(sounds/mysound4.wav)
+if not playing(sounds/mysound4.wav)
 	turn_off OutputH
 end_if
 wait .1
+repeat
+
+activity Playback Button 1
+wait_press InputA
+turn_on OutputE
+start_sound sounds/mysound1.wav
+repeat
+
+activity Playback Button 2
+wait_press InputB
+turn_on OutputF
+start_sound sounds/mysound2.wav
+repeat
+
+activity Playback Button 3
+wait_press InputC
+turn_on OutputG
+start_sound sounds/mysound3.wav
+repeat
+
+activity Playback Button 4
+wait_press InputD
+turn_on OutputH
+start_sound sounds/mysound4.wav
 repeat
 
 
