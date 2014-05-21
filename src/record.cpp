@@ -40,17 +40,27 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 	Record::SAMPLE *dest = &data->samples[data->frameIndex];
 
 	// Save the frame buffer (will be in mono).
-	int wantedLen = data->soundWanted + data->framesPerBuffer;
 	for (int i = 0; i < framesPerBuffer; i++){
 		*dest++ = *src;
 
 		// Fixed length recording?
 		if (data->soundWanted > 0){
-			if (data->frameIndex >= wantedLen){
-				// Discard the first buffer
+			if (data->frameIndex >= data->soundWanted + data->framesPerBuffer){
+				// Discard the first buffer + first 15000 frames of silence
 				if (data->frameIndex > data->framesPerBuffer){
 					int startFrame = data->framesPerBuffer;
 					int len = data->frameIndex - startFrame;
+					for (int i = 0; i < 15000; i++){
+						int val = data->samples[startFrame];
+						if (len > 2 && val >= -(data->recordingLevel)
+							&& val <= data->recordingLevel)
+						{
+							startFrame++;
+							len--;
+						}
+						else
+							break;
+					}
 					memcpy(&data->samples[0], &data->samples[startFrame],
 								len * sizeof(short));
 					data->frameIndex = len - 1;
@@ -324,7 +334,7 @@ bool Record::startStream(int soundWanted, int silenceWanted)
 
 	// Wait for first callback to start
 	while (mRecordData.frameIndex == 0)
-		Engine::sleep(20);
+		Engine::sleep(10);
 
 	return true;
 }
@@ -335,8 +345,18 @@ bool Record::startStream(int soundWanted, int silenceWanted)
  */
 bool Record::stopStream()
 {
-	if (Pa_IsStreamStopped(mStream) == 0)
-		Pa_AbortStream(mStream);
+	int retries = 20;
+	while (Pa_IsStreamStopped(mStream) == 0){
+		if (retries > 0 && mRecordData.soundWanted > 0){
+			mRecordData.soundWanted = 1;
+			Engine::sleep(10);
+			retries--;
+		}
+		else {
+			Pa_AbortStream(mStream);
+			break;
+		}
+	}
 
 	// Re-enable SDL_Mixer
 	Audio::enable();
