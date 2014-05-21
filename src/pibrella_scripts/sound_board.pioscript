@@ -79,33 +79,29 @@ start_activity Switch To Play Mode
 # This is the 'Play Mode' activity
 #
 activity Play Mode
-if not playing(sounds/mysound1.wav)
+if pressed(InputA)
+	start_sound sounds/mysound1.wav
+	turn_on OutputE
+else if not playing(sounds/mysound1.wav)
 	turn_off OutputE
-	if pressed(InputA)
-		turn_on OutputE
-		start_sound sounds/mysound1.wav
-	end_if
 end_if
-if not playing(sounds/mysound2.wav)
+if pressed(InputB)
+	start_sound sounds/mysound2.wav
+	turn_on OutputF
+else if not playing(sounds/mysound2.wav)
 	turn_off OutputF
-	if pressed(InputB)
-		turn_on OutputF
-		start_sound sounds/mysound2.wav
-	end_if
 end_if
-if not playing(sounds/mysound3.wav)
+if pressed(InputC)
+	start_sound sounds/mysound3.wav
+	turn_on OutputG
+else if not playing(sounds/mysound3.wav)
 	turn_off OutputG
-	if pressed(InputC)
-		turn_on OutputG
-		start_sound sounds/mysound3.wav
-	end_if
 end_if
-if not playing(sounds/mysound4.wav)
+if pressed(InputD)
+	start_sound sounds/mysound4.wav
+	turn_on OutputH
+else if not playing(sounds/mysound4.wav)
 	turn_off OutputH
-	if pressed(InputD)
-		turn_on OutputH
-		start_sound sounds/mysound4.wav
-	end_if
 end_if
 wait .1
 repeat

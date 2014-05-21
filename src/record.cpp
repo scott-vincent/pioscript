@@ -79,12 +79,12 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 				if (data->frameIndex > 1000){
 					// Remove silence at start apart from last 500 frames
 					// as we don't want to chop the start of the sound off.
-					int startFrame = data->frameIndex - 1000;
+					int startFrame = data->frameIndex - 500;
 					memcpy(&data->samples[0], &data->samples[startFrame],
-								1000 * sizeof(short));
-					data->frameIndex = 1000;
+								500 * sizeof(short));
+					data->frameIndex = 500;
 					dest = &data->samples[data->frameIndex];
-					data->silenceStart = 1001;
+					data->silenceStart = 501;
 					continue;
 				}
 				data->silenceStart = data->frameIndex + 1;
@@ -103,10 +103,10 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 			else if ((data->frameIndex - data->silenceStart) >=
 							data->silenceWanted)
 			{
-				// Remove silence at end apart from first 1000 frames
+				// Remove silence at end apart from first 500 frames
 				// as we don't want to chop the end of the sound off.
-				if (data->frameIndex - data->silenceStart > 1000)
-					data->frameIndex = data->silenceStart + 1000;
+				if (data->frameIndex - data->silenceStart > 500)
+					data->frameIndex = data->silenceStart + 500;
 
 				return paComplete;
 			}
