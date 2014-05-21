@@ -40,13 +40,23 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 	Record::SAMPLE *dest = &data->samples[data->frameIndex];
 
 	// Save the frame buffer (will be in mono).
+	int wantedLen = data->soundWanted + data->framesPerBuffer;
 	for (int i = 0; i < framesPerBuffer; i++){
 		*dest++ = *src;
 
 		// Fixed length recording?
 		if (data->soundWanted > 0){
-			if (data->frameIndex >= data->soundWanted)
+			if (data->frameIndex >= wantedLen){
+				// Discard the first buffer
+				if (data->frameIndex > data->framesPerBuffer){
+					int startFrame = data->framesPerBuffer;
+					int len = data->frameIndex - startFrame;
+					memcpy(&data->samples[0], &data->samples[startFrame],
+								len * sizeof(short));
+					data->frameIndex = len - 1;
+				}
 				return paComplete;
+			}
 
 			src++;
 			data->frameIndex++;
@@ -76,7 +86,7 @@ static int recordCallback(const void *inputBuffer, void *outputBuffer,
 			// Waiting for sound to start
 			if (foundSound){
 				data->soundTriggered = true;
-				if (data->frameIndex > 1000){
+				if (data->frameIndex > 500){
 					// Remove silence at start apart from last 500 frames
 					// as we don't want to chop the start of the sound off.
 					int startFrame = data->frameIndex - 500;
@@ -179,13 +189,13 @@ Record::Record()
 
 	mRecordData.actualRate = Sample::INTERNAL_RATE;
 	// Use 50ms buffer
-	int framesPerBuffer = mRecordData.actualRate / 20;
+	mRecordData.framesPerBuffer = mRecordData.actualRate / 20;
     err = Pa_OpenStream(
               &mStream,
               &inputParams,
               NULL,
               mRecordData.actualRate,
-              framesPerBuffer,
+              mRecordData.framesPerBuffer,
               paClipOff,
               recordCallback,
               &mRecordData);
@@ -195,13 +205,13 @@ Record::Record()
 	if (err == paInvalidSampleRate){
 		mRecordData.actualRate = ALTERNATE_RATE;
 		// Use 50ms buffer
-		int framesPerBuffer = mRecordData.actualRate / 20;
+		mRecordData.framesPerBuffer = mRecordData.actualRate / 20;
 	    err = Pa_OpenStream(
               	&mStream,
               	&inputParams,
               	NULL,
               	mRecordData.actualRate,
-              	framesPerBuffer,
+              	mRecordData.framesPerBuffer,
               	paClipOff,
               	recordCallback,
               	&mRecordData);
