@@ -2016,6 +2016,9 @@ void Command::reportPibrella()
 	printf("\n");
 	printf("Pioscript v3.0    Scott Vincent    May 2014    email: scottvincent@yahoo.com\n");
 	printf("\n");
+	printf("You can run a script by double-clicking it. You can view or change a script by\n");
+	printf("right-clicking it and selecting the Leafpad editor.\n");
+	printf("\n");
 	printf("Command List\n");
 	printf("============\n");
 	printf("\n");
