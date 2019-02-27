@@ -9,8 +9,8 @@
 #
 # The script exits when switch 0 is pressed and held for 1 second.
 
-start_activity Sound 1
-start_activity Sound 2
+start_activity First Sound
+start_activity Second Sound
 wait_longpress 0
 output_low *
 exit
